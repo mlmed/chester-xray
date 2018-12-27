@@ -1,23 +1,4 @@
-/**
- * @license
- * Copyright 2018 Google LLC. All Rights Reserved.
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * =============================================================================
- */
-
 function display_size_data_full(){
-  // Check for support of the PerformanceResourceTiming.*size properties and print their values
-  // if supported.
   if (performance === undefined) {
     console.log("= Display Size Data: performance NOT supported");
     return;
@@ -29,7 +10,6 @@ function display_size_data_full(){
     return;
   }
 
-  // For each "resource", display its *Size property values
   console.log("= Display Size Data");
   for (var i=0; i < list.length; i++) {
 	if (list[i].name.includes("shard")){
@@ -53,8 +33,6 @@ function display_size_data_full(){
 }
 
 function display_size_data(){
-  // Check for support of the PerformanceResourceTiming.*size properties and print their values
-  // if supported.
   if (performance === undefined) {
     console.log("= Display Size Data: performance NOT supported");
     return;
@@ -65,8 +43,7 @@ function display_size_data(){
     console.log("= Display Size Data: performance.getEntriesByType() is  NOT supported");
     return;
   }
-
-  // For each "resource", display its *Size property values
+  
   var todo = 0
   var total = 0
   for (var i=0; i < list.length; i++) {
@@ -74,7 +51,6 @@ function display_size_data(){
     	total+=1
     }
   }
-  //console.log('Loading model... ' + total + "/" + 59)
   status('Loading model... ' + total + "/" + 8);
 }
 
@@ -84,118 +60,75 @@ const IMAGE_SIZE = 224;
 const TOPK_PREDICTIONS = 10;
 let mobilenet;
 
-const mobilenetDemo = async () => {
-  status('Loading model...');
-  var t=setInterval(display_size_data,100);
-  mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
-  clearInterval(t);
-  //mobilenet = await tf.loadModel(MOBILENET_MODEL_PATH); // Warmup the model. This isn't necessary, but makes the first prediction
-  // faster. Call `dispose` to release the WebGL memory allocated for the return
-  // value of `predict`.
+const run = async () => {
+	status('Loading model...');
+	var t=setInterval(display_size_data,100);
+	mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
+	status('Loading model into memory');
+	clearInterval(t);
 
-  //mobilenet.predict(tf.zeros([1, IMAGE_SIZE, IMAGE_SIZE, 3])).dispose();
-  mobilenet.predict(tf.zeros([1, 3, IMAGE_SIZE, IMAGE_SIZE])).dispose();
-  status(''); // Make a prediction through the locally hosted cat.jpg.
+	mobilenet.predict(tf.zeros([1, 3, IMAGE_SIZE, IMAGE_SIZE])).dispose();
+	status('');
 
-  const catElement = document.getElementById('cat');
+	const catElement = document.getElementById('cat');
 
-  if (catElement.complete && catElement.naturalHeight !== 0) {
-    predict(catElement);
-    catElement.style.display = '';
-  } else {
-    catElement.onload = () => {
-      predict(catElement);
-      catElement.style.display = '';
-    };
-  }
+	if (catElement.complete && catElement.naturalHeight !== 0) {
+		predict(catElement);
+		catElement.style.display = '';
+	} else {
+		catElement.onload = () => {
+			predict(catElement);
+			catElement.style.display = '';
+		};
+	}
 
-  document.getElementById('file-container').style.display = '';
+	document.getElementById('file-container').style.display = '';
 };
-/**
- * Given an image element, makes a prediction through mobilenet returning the
- * probabilities of the top K classes.
- */
-
 
 async function predict(imgElement) {
-  status('Predicting...');
-  const startTime = performance.now();
-  output = tf.tidy(() => {
-    // tf.fromPixels() returns a Tensor from an image element.
+	status('Predicting...');
+	const startTime = performance.now();
+	
+	output = tf.tidy(() => {
 	  
-    const img = tf.fromPixels(imgElement).toFloat();
-    const offset = tf.scalar(255); // Normalize the image from [0, 255] to [-1, 1].
-
-    const normalized = img.div(offset);
-
-    const batched = normalized.mean(2).reshape([1, 1, IMAGE_SIZE, IMAGE_SIZE]).tile([1, 3,1,1])
-    //const batched = normalized.reshape([1, IMAGE_SIZE, IMAGE_SIZE, 3]); // Make a prediction through mobilenet.
-    //const batched = normalized.mean(2).reshape([1, 3, IMAGE_SIZE, IMAGE_SIZE]); // Make a prediction through mobilenet.
+	    const img = tf.fromPixels(imgElement).toFloat();
+	
+	    const normalized = img.div(tf.scalar(255));
+	
+	    const batched = normalized.mean(2).reshape([1, 1, IMAGE_SIZE, IMAGE_SIZE]).tile([1, 3,1,1])
+	    
+	    const result = mobilenet.execute(batched, ["Sigmoid", "Relu", "Relu_1", "Relu_3", "Relu_14"])
+	
+	    return result
     
-    const result = mobilenet.execute(batched, ["Relu", "Relu_1", "Sigmoid"])
+	});
+  
+	logits = await output[0].data()
 
-    return result
-    
-    //b = a.reshape([64, 112, 112]).mean(0)
+	layers = []
+  
+	layers.push(["layer1",output[1].mean(0).abs().mean(0)])
+	layers.push(["layer2",output[2].mean(0).abs().mean(0)])
+	layers.push(["layer3",output[3].mean(0).abs().mean(0)])
+	layers.push(["layer4",output[4].mean(0).abs().mean(0)])
+  
+	//console.log(logits)
 
-    //return mobilenet.predict(batched);
-  });
+	const classes = await distOverClasses(logits)
 
-  layer1 = output[0].mean(0).mean(0) //112, 112
-  
-  layer2 = output[1].mean(0).mean(0) // 56. 56
-  
-  logits = await output[2].data()
-  
-  console.log(logits)
+	const totalTime = performance.now() - startTime;
+	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
 
-  const classes = await distOverClasses(logits)
-  
-  var c = document.getElementById("layer1");
-  tf.toPixels(layer1.div(layer1.max()),c)
-  
-  var c = document.getElementById("layer2");
-  tf.toPixels(layer2.div(layer2.max()),c)
-
-  
-  
-// plot layer first as text
-//  for (x = 0; x < 56; x++) {
-//	s = ""
-//	for (y = 0; y < 56; y++) {
-//		if (layer2[x*56+y]>0.1){
-//		s+="x  "
-//        }else{
-//		s+="   "
-//        }
-//    }
-//    console.log(s)
-//  }
-  
-  const totalTime = performance.now() - startTime;
-  status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
-
-  showResults(imgElement, classes);
+	showResults(imgElement, layers, classes);
 }
-/**
- * Computes the probabilities of the topK classes given logits by computing
- * softmax to get probabilities and then sorting the probabilities.
- * @param logits Tensor representing the logits from MobileNet.
- * @param topK The number of top predictions to show.
- */
 
 async function distOverClasses(values){
-	
-	//values = await logits.data();
 	
 	pathologies = ["Atelectasis", "Consolidation", "Infiltration",
         "Pneumothorax", "Edema", "Emphysema", "Fibrosis", "Effusion", "Pneumonia",
         "Pleural_Thickening", "Cardiomegaly", "Nodule", "Mass", "Hernia"]
 	
 	values = values.subarray(0,pathologies.length)
-	
-//	softmax = await tf.softmax(values).data()
-//	out = await tf.argMax(softmax).data()
 	
 	const topClassesAndProbs = [];
 	for (let i = 0; i < values.length; i++) {
@@ -250,32 +183,47 @@ function decimalToHexString(number){
   return number.toString(16).toUpperCase();
 }
 
-function showResults(imgElement, classes) {
-  const predictionContainer = document.createElement('div');
-  predictionContainer.className = 'pred-container';
-  const imgContainer = document.createElement('div');
-  imgContainer.appendChild(imgElement);
-  predictionContainer.appendChild(imgContainer);
-  const probsContainer = document.createElement('div');
+function showResults(imgElement, layers, classes) {
+	
+	const predictionContainer = document.createElement('div');
+	predictionContainer.className = 'pred-container';
+	const imgContainer = document.createElement('div');
+	imgContainer.appendChild(imgElement);
+	predictionContainer.appendChild(imgContainer);
+	
+	const layersContainer = document.createElement('div');
+  
+	for(i = 0; i < layers.length; i++){
+		layerName = layers[i][0]
+		layer = layers[i][1]
+		var c = document.createElement('canvas');
+		tf.toPixels(layer.div(layer.max()),c)
+		c.style.width = "112px"
+		c.style.imageRendering = "pixelated"
+		layersContainer.appendChild(c);
+	}
+		
+	predictionContainer.appendChild(layersContainer);
+  
+	const probsContainer = document.createElement('div');
+	for (let i = 0; i < classes.length; i++) {
+	    const row = document.createElement('div');
+	    row.className = 'row';
+	    const classElement = document.createElement('div');
+	    classElement.className = 'cell';
+	    classElement.innerText = classes[i].className;
+	    row.appendChild(classElement);
+	    const probsElement = document.createElement('div');
+	    probsElement.className = 'cell';
+	    probsElement.innerText = classes[i].probability.toFixed(3);
+	    scale = parseInt((1-classes[i].probability)*255)
+	    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
+	    row.appendChild(probsElement);
+	    probsContainer.appendChild(row);
+	}
 
-  for (let i = 0; i < classes.length; i++) {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const classElement = document.createElement('div');
-    classElement.className = 'cell';
-    classElement.innerText = classes[i].className;
-    row.appendChild(classElement);
-    const probsElement = document.createElement('div');
-    probsElement.className = 'cell';
-    probsElement.innerText = classes[i].probability.toFixed(3);
-    scale = parseInt((1-classes[i].probability)*255)
-    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
-    row.appendChild(probsElement);
-    probsContainer.appendChild(row);
-  }
-
-  predictionContainer.appendChild(probsContainer);
-  predictionsElement.insertBefore(predictionContainer, predictionsElement.firstChild);
+	predictionContainer.appendChild(probsContainer);
+	predictionsElement.insertBefore(predictionContainer, predictionsElement.firstChild);
 }
 
 const filesElement = document.getElementById('files');
@@ -289,25 +237,44 @@ filesElement.addEventListener('change', evt => {
     }
 
     let reader = new FileReader();
-    const idx = i; // Closure to capture the file information.
+    const idx = i;
 
     reader.onload = e => {
-      // Fill the image & call predict.
       let img = document.createElement('img');
       img.src = e.target.result;
       img.width = IMAGE_SIZE;
       img.height = IMAGE_SIZE;
 
       img.onload = () => predict(img);
-    }; // Read in the image file as a data URL.
+    }; 
 
 
     reader.readAsDataURL(f);
   }
 });
-const demoStatusElement = document.getElementById('status');
+const statusElement = document.getElementById('status');
 
-const status = msg => demoStatusElement.innerText = msg;
+const status = msg => statusElement.innerText = msg;
 
 const predictionsElement = document.getElementById('predictions');
-mobilenetDemo();
+
+
+function findGetParameter(parameterName) {
+    var result = null,
+        tmp = [];
+    location.search
+        .substr(1)
+        .split("&")
+        .forEach(function (item) {
+          tmp = item.split("=");
+          if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
+        });
+    return result;
+}
+
+$("#agree").click(function(){
+	$("#agree").hide()
+	run();
+});
+
+

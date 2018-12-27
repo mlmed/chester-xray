@@ -1,16 +1,15 @@
 <html>
 <head>
 
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@0.14.1/dist/tf.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+	<script async src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+
+<script src="res/tf.min.js"></script>
 
 <script>
-/* function loadMobilenet() {
-	  return tf.loadModel('https://storage.googleapis.com/tfjs-models/tfjs/mobilenet_v1_0.25_224/model.json');
-} */
-function loadMobilenet() {
-	  return tf.loadModel('test/weights_manifest.json');
-}
+
 </script>
 </head>
 
@@ -47,16 +46,27 @@ function loadMobilenet() {
 
 
 <body>
-  <div class="tfjs-example-container">
+  <div class="container">
+  <div >
 
+<div class="alert alert-warning" role="alert" style="width:100%">
+<center>
+This is a prototype system for diagnosing chest x-rays using neural networks. 
+All processing is done on your device and images are not sent to the server.
+If you continue you assume all liability when using the system. 
+A neural network model (~20mb) will be downloaded to your browser.
+<button id="agree" type="button" class="btn btn-danger">Accept and continue</button>
+</center>
+</div>
+	
 
     <section>
-      <p class="section-head">Status</p>
+    By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2018
+      <p class="section-head"></p>
       <div id="status"></div>
     </section>
 
     <section>
-      <p class="section-head">Model Output</p>
 
       <div id="file-container" style="display: none">
         Upload an image: <input type="file" id="files" name="files[]" multiple="">
@@ -68,12 +78,14 @@ function loadMobilenet() {
       <img style="display: none" id="cat" src="examples/00000047_005.png" width="224" height="224">
       
     </section>
-<script src="imagenet_classes.js"></script>
-<script src="system.js"></script>
-<canvas id="layer1"></canvas>
-<canvas id="layer2"></canvas>
 
+
+
+ </div>
   </div>
 </body>
+
+
+<script src="system.js?v=1.2"></script>
 
 </html>
