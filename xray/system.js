@@ -78,7 +78,7 @@ function display_size_data(){
   status('Loading model... ' + total + "/" + 8);
 }
 
-const MODEL_PATH = 'chest2';
+const MODEL_PATH = 'chestxnet1';
 
 const IMAGE_SIZE = 224;
 const TOPK_PREDICTIONS = 10;
