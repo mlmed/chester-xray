@@ -77,15 +77,12 @@ const run = async () => {
 	status('');
 
 	catElement = document.getElementById('cat');
-	
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
 		predict(catElement);
-		catElement.style.display = '';
 	} else {
 		catElement.onload = () => {
 			predict(catElement);
-			catElement.style.display = '';
 		};
 	}
 
@@ -162,14 +159,8 @@ async function predict(imgElement) {
 	const totalTime = performance.now() - startTime;
 	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
 
-	showResults(imgElement, layers, classes, recScore);
+	await showResults(imgElement, layers, classes, recScore);
 	
-//	$( "canvas" ).each(function(i){
-//		ctx = this.getContext("2d");
-//		d = ctx.getImageData(0, 0, this.width, this.height);
-//		invertColors(d.data);
-//		ctx.putImageData(d,0,0);
-//	});
 }
 
 async function distOverClasses(values){
@@ -293,10 +284,11 @@ async function showResults(imgElement, layers, classes, recScore) {
 	const predictionContainer = document.createElement('div');
 	predictionContainer.className = 'row';
 	const imgContainer = document.createElement('div');
-	imgContainer.className="col-xs-3"
-	imgElement.style.width = "100%"
-	imgElement.height = "auto"
-	imgElement.style.height = "auto"
+	imgContainer.className="col-xs-3";
+	imgElement.style.width = "100%";
+	imgElement.height = "auto";
+	imgElement.style.height = "auto";
+	imgElement.style.display = "";
 	imgContainer.appendChild(imgElement);
 	predictionContainer.appendChild(imgContainer);
 	
@@ -319,7 +311,7 @@ async function showResults(imgElement, layers, classes, recScore) {
 		ctx.putImageData(d,0,0);
 		
 		layerBox.appendChild(document.createElement('br'));
-		layerBox.style.textAlign="center"
+		layerBox.style.textAlign="center";
 		layerBox.append(layerName);
 		//layerBox.innerText = layerName;
 		layerBox.className = 'col-xs-3 nopadding';
@@ -330,7 +322,7 @@ async function showResults(imgElement, layers, classes, recScore) {
 	predictionContainer.appendChild(layersContainer);
   
 	const probsContainer = document.createElement('div');
-	probsContainer.className="col-xs-2"
+	probsContainer.className="col-xs-2";
 	//probsContainer.style.width = "200px"
 	
 	if (recScore > 0.4){
