@@ -325,5 +325,4 @@ $("#agree").click(function(){
 	$("#agree").hide()
 	run();
 });
-run();
 
