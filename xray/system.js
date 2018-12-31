@@ -51,26 +51,33 @@ function display_size_data(){
     	total+=1
     }
   }
-  status('Loading model... ' + total + "/" + 8);
+  status('Loading model... ' + total + "/" + (8+16));
 }
 
-const MODEL_PATH = 'chestxnet1';
 
 const IMAGE_SIZE = 224;
 const TOPK_PREDICTIONS = 10;
 let mobilenet;
+let mobileaenet;
+
+let catElement;
+
 
 const run = async () => {
 	status('Loading model...');
 	var t=setInterval(display_size_data,100);
+	const MODEL_PATH = 'chestxnet1';
 	mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
+	const AEMODEL_PATH = 'chestae1';
+	mobileaenet = await tf.loadFrozenModel(AEMODEL_PATH + "/tensorflowjs_model.pb", AEMODEL_PATH + "/weights_manifest.json");
 	status('Loading model into memory');
 	clearInterval(t);
 
 	mobilenet.predict(tf.zeros([1, 3, IMAGE_SIZE, IMAGE_SIZE])).dispose();
 	status('');
 
-	const catElement = document.getElementById('cat');
+	catElement = document.getElementById('cat');
+	
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
 		predict(catElement);
@@ -89,6 +96,36 @@ async function predict(imgElement) {
 	status('Predicting...');
 	const startTime = performance.now();
 	
+	img_small = document.createElement('img');
+	img_small.src = imgElement.src
+	img_small.width = 64
+	img_small.height = 64
+	
+	rec = tf.tidy(() => {
+		
+	    const img = tf.fromPixels(img_small).toFloat();
+		
+	    const normalized = img.div(tf.scalar(255));
+	
+	    const batched = normalized.mean(2).reshape([1, 1, 64, 64])
+	    
+	    const batched2 = batched.mul(2).sub(1)
+	    
+	    const result = mobileaenet.predict(batched)
+	
+	    const rec = batched.sub(result).pow(2)
+	    
+	    return rec
+	});
+	
+	recScore = rec.mean().dataSync()
+	console.log(recScore);
+	
+	
+	///tf.toPixels(aa.add(1).div(3).pow(4),document.getElementById("aa"))
+	
+	
+	
 	output = tf.tidy(() => {
 	  
 	    const img = tf.fromPixels(imgElement).toFloat();
@@ -106,6 +143,8 @@ async function predict(imgElement) {
 	logits = await output[0].data()
 
 	layers = []
+	
+	layers.push(["err",rec.reshape([64,64])])
   
 	layers.push(["layer1",output[1].mean(0).abs().mean(0)])
 	layers.push(["layer2",output[2].mean(0).abs().mean(0)])
@@ -119,7 +158,7 @@ async function predict(imgElement) {
 	const totalTime = performance.now() - startTime;
 	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
 
-	showResults(imgElement, layers, classes);
+	showResults(imgElement, layers, classes, recScore);
 }
 
 async function distOverClasses(values){
@@ -183,7 +222,7 @@ function decimalToHexString(number){
   return number.toString(16).toUpperCase();
 }
 
-function showResults(imgElement, layers, classes) {
+function showResults(imgElement, layers, classes, recScore) {
 	
 	const predictionContainer = document.createElement('div');
 	predictionContainer.className = 'pred-container';
@@ -206,20 +245,30 @@ function showResults(imgElement, layers, classes) {
 	predictionContainer.appendChild(layersContainer);
   
 	const probsContainer = document.createElement('div');
-	for (let i = 0; i < classes.length; i++) {
-	    const row = document.createElement('div');
-	    row.className = 'row';
-	    const classElement = document.createElement('div');
-	    classElement.className = 'cell';
-	    classElement.innerText = classes[i].className;
-	    row.appendChild(classElement);
-	    const probsElement = document.createElement('div');
-	    probsElement.className = 'cell';
-	    probsElement.innerText = classes[i].probability.toFixed(3);
-	    scale = parseInt((1-classes[i].probability)*255)
-	    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
-	    row.appendChild(probsElement);
-	    probsContainer.appendChild(row);
+	probsContainer.style.width = "200px"
+	
+	if (recScore > 0.4){
+		const row = document.createElement('div');
+		row.className = 'row';
+		row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100)
+ + ")"
+		probsContainer.appendChild(row);
+	}else{
+		for (let i = 0; i < classes.length; i++) {
+		    const row = document.createElement('div');
+		    row.className = 'row';
+		    const classElement = document.createElement('div');
+		    classElement.className = 'cell';
+		    classElement.innerText = classes[i].className;
+		    row.appendChild(classElement);
+		    const probsElement = document.createElement('div');
+		    probsElement.className = 'cell';
+		    probsElement.innerText = classes[i].probability.toFixed(3);
+		    scale = parseInt((1-classes[i].probability)*255)
+		    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
+		    row.appendChild(probsElement);
+		    probsContainer.appendChild(row);
+		}
 	}
 
 	predictionContainer.appendChild(probsContainer);
@@ -276,5 +325,5 @@ $("#agree").click(function(){
 	$("#agree").hide()
 	run();
 });
-
+run();
 
