@@ -66,9 +66,9 @@ let catElement;
 const run = async () => {
 	status('Loading model...');
 	var t=setInterval(display_size_data,100);
-	const MODEL_PATH = 'chestxnet1';
+	const MODEL_PATH = 'models/chestxnet1';
 	mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
-	const AEMODEL_PATH = 'chestae1';
+	const AEMODEL_PATH = 'models/chestae1';
 	mobileaenet = await tf.loadFrozenModel(AEMODEL_PATH + "/tensorflowjs_model.pb", AEMODEL_PATH + "/weights_manifest.json");
 	status('Loading model into memory');
 	clearInterval(t);
@@ -144,12 +144,16 @@ async function predict(imgElement) {
 
 	layers = []
 	
-	layers.push(["err",rec.reshape([64,64])])
+	layers.push(["OOD error",rec.reshape([64,64])])
   
-	layers.push(["layer1",output[1].mean(0).abs().mean(0)])
-	layers.push(["layer2",output[2].mean(0).abs().mean(0)])
-	layers.push(["layer3",output[3].mean(0).abs().mean(0)])
-	layers.push(["layer4",output[4].mean(0).abs().mean(0)])
+	layers.push(["layer1 mean",output[1].mean(0).abs().mean(0)])
+//	layers.push(["layer2",output[2].mean(0).abs().mean(0)])
+//	layers.push(["layer3",output[3].mean(0).abs().mean(0)])
+//	layers.push(["layer4",output[4].mean(0).abs().mean(0)])
+	layers.push(["layer1 max",output[1].mean(0).abs().max(0)])
+	layers.push(["layer2 max",output[2].mean(0).abs().max(0)])
+	layers.push(["layer3 max",output[3].mean(0).abs().max(0)])
+	layers.push(["layer4 max",output[4].mean(0).abs().max(0)])
   
 	//console.log(logits)
 
@@ -159,6 +163,13 @@ async function predict(imgElement) {
 	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
 
 	showResults(imgElement, layers, classes, recScore);
+	
+//	$( "canvas" ).each(function(i){
+//		ctx = this.getContext("2d");
+//		d = ctx.getImageData(0, 0, this.width, this.height);
+//		invertColors(d.data);
+//		ctx.putImageData(d,0,0);
+//	});
 }
 
 async function distOverClasses(values){
@@ -222,36 +233,110 @@ function decimalToHexString(number){
   return number.toString(16).toUpperCase();
 }
 
-function showResults(imgElement, layers, classes, recScore) {
+
+function invertColors(data) {
+  for (var i = 0; i < data.length; i+= 4) {
+    data[i] = data[i] ^ 255; // Invert Red
+    data[i+1] = data[i+1] ^ 255; // Invert Green
+    data[i+2] = data[i+2] ^ 255; // Invert Blue
+  }
+}
+
+function enforceBounds(x) {
+    if (x < 0) {
+        return 0;
+    } else if (x > 1){
+        return 1;
+    } else {
+        return x;
+    }
+}
+function interpolateLinearly(x, values) {
+    // Split values into four lists
+    var x_values = [];
+    var r_values = [];
+    var g_values = [];
+    var b_values = [];
+    for (i in values) {
+        x_values.push(values[i][0]);
+        r_values.push(values[i][1][0]);
+        g_values.push(values[i][1][1]);
+        b_values.push(values[i][1][2]);
+    }
+    var i = 1;
+    while (x_values[i] < x) {
+        i = i+1;
+    }
+    i = i-1;
+    var width = Math.abs(x_values[i] - x_values[i+1]);
+    var scaling_factor = (x - x_values[i]) / width;
+    // Get the new color values though interpolation
+    var r = r_values[i] + scaling_factor * (r_values[i+1] - r_values[i])
+    var g = g_values[i] + scaling_factor * (g_values[i+1] - g_values[i])
+    var b = b_values[i] + scaling_factor * (b_values[i+1] - b_values[i])
+    return [enforceBounds(r), enforceBounds(g), enforceBounds(b)];
+}
+
+
+function makeColor(data) {
+	
+	  for (var i = 0; i < data.length; i+= 4) {
+		var color = interpolateLinearly(data[i]/255, jet);
+	    data[i] = Math.round(255*color[0]); // Invert Red
+	    data[i+1] = Math.round(255*color[1]); // Invert Green
+	    data[i+2] = Math.round(255*color[2]); // Invert Blue
+	  }
+	}
+
+async function showResults(imgElement, layers, classes, recScore) {
 	
 	const predictionContainer = document.createElement('div');
-	predictionContainer.className = 'pred-container';
+	predictionContainer.className = 'row';
 	const imgContainer = document.createElement('div');
+	imgContainer.className="col-xs-3"
+	imgElement.style.width = "100%"
+	imgElement.height = "auto"
+	imgElement.style.height = "auto"
 	imgContainer.appendChild(imgElement);
 	predictionContainer.appendChild(imgContainer);
 	
 	const layersContainer = document.createElement('div');
-  
+	layersContainer.className="col-xs-6";
 	for(i = 0; i < layers.length; i++){
-		layerName = layers[i][0]
-		layer = layers[i][1]
-		var c = document.createElement('canvas');
-		tf.toPixels(layer.div(layer.max()),c)
-		c.style.width = "112px"
-		c.style.imageRendering = "pixelated"
-		layersContainer.appendChild(c);
+		layerName = layers[i][0];
+		layer = layers[i][1];
+		var canvas = document.createElement('canvas');
+		await tf.toPixels(layer.div(layer.max()),canvas);		
+		canvas.style.width = "100%";
+		canvas.style.height = "";
+		canvas.style.imageRendering = "pixelated";
+		const layerBox = document.createElement('span');
+		layerBox.appendChild(canvas);
+		
+		ctx = canvas.getContext("2d");
+		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		makeColor(d.data);
+		ctx.putImageData(d,0,0);
+		
+		layerBox.appendChild(document.createElement('br'));
+		layerBox.style.textAlign="center"
+		layerBox.append(layerName);
+		//layerBox.innerText = layerName;
+		layerBox.className = 'col-xs-3 nopadding';
+		
+		layersContainer.appendChild(layerBox);
 	}
 		
 	predictionContainer.appendChild(layersContainer);
   
 	const probsContainer = document.createElement('div');
-	probsContainer.style.width = "200px"
+	probsContainer.className="col-xs-2"
+	//probsContainer.style.width = "200px"
 	
 	if (recScore > 0.4){
 		const row = document.createElement('div');
 		row.className = 'row';
-		row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100)
- + ")"
+		row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + ")"
 		probsContainer.appendChild(row);
 	}else{
 		for (let i = 0; i < classes.length; i++) {
@@ -272,7 +357,9 @@ function showResults(imgElement, layers, classes, recScore) {
 	}
 
 	predictionContainer.appendChild(probsContainer);
+	predictionsElement.insertBefore(document.createElement('hr'), predictionsElement.firstChild);
 	predictionsElement.insertBefore(predictionContainer, predictionsElement.firstChild);
+	
 }
 
 const filesElement = document.getElementById('files');
@@ -326,3 +413,4 @@ $("#agree").click(function(){
 	run();
 });
 
+run();

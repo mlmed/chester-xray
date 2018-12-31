@@ -7,6 +7,7 @@
 	<script async src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 
 <script src="res/tf.js"></script>
+<script src="res/js-colormaps.js"></script>
 
 <script>
 
@@ -35,7 +36,14 @@
 
   #file-container {
     margin-bottom: 20px;
-  }</style>
+  }
+  
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+  </style>
+
 
 <script>
 
@@ -46,7 +54,7 @@
 
 
 <body>
-  <div class="container">
+  <div class="container" style="width:100%">
   <div >
 
 <div class="alert alert-warning" role="alert" style="width:100%">
@@ -70,7 +78,7 @@ A neural network model (~150mb) will be downloaded to your browser.
 
       <div id="file-container" style="display: none">
         Upload an image: <input type="file" id="files" name="files[]" multiple="">
-        <a href="examples/">examples</a>
+        <a target="_blank" href="examples/">example files</a>
       </div>
 
       <div id="predictions"></div>
