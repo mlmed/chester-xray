@@ -325,7 +325,7 @@ async function showResults(imgElement, layers, classes, recScore) {
 	probsContainer.className="col-xs-2";
 	//probsContainer.style.width = "200px"
 	
-	if (recScore > 0.4){
+	if (recScore > 0.5){
 		const row = document.createElement('div');
 		row.className = 'row';
 		row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + ")"
