@@ -6,7 +6,8 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 	<script async src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 
-<script src="res/tf.min.js"></script>
+<title>O-CXR</title>
+<script src="res/tf.js"></script>
 <script src="res/js-colormaps.js"></script>
 
 <!-- Global site tag (gtag.js) - Google Analytics -->
@@ -62,48 +63,45 @@
 
 </script>
 
-
 <body>
-  <div class="container" style="width:100%">
-  <div >
+	<div class="container" style="width: 100%">
 
-<div class="alert alert-warning" role="alert" style="width:100%">
-<center>
-NOT FOR MEDICAL USE. This is a prototype system for diagnosing chest x-rays using neural networks. 
-All processing is done on your device and images are not sent to the server.
-If you continue you assume all liability when using the system. 
-A neural network model (~150mb) will be downloaded to your browser.
-<button id="agree" type="button" class="btn btn-danger">Accept and continue</button>
-</center>
-</div>
-	
-
-    <section>
-    By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2018
-      <p class="section-head"></p>
-      <div id="status"></div>
-    </section>
-
-    <section>
-
-      <div id="file-container" style="display: none">
-        Upload an image: <input type="file" id="files" name="files[]" multiple="">
-        <a target="_blank" href="examples/">example files</a>
-      </div>
-
-      <div id="predictions"></div>
-
-      <img style="display: none" id="cat" src="examples/00000047_005.png" width="224" height="224">
-      
-    </section>
+		<div class="row">
+			<div class="alert alert-warning" role="alert" style="width: 100%">
+				<center>
+					NOT FOR MEDICAL USE. This is a prototype system for diagnosing
+					chest x-rays using neural networks. All processing is done on your
+					device and images are not sent to the server. If you continue you
+					assume all liability when using the system. A neural network model
+					(~150mb) will be downloaded to your browser.
+					<button id="agree" type="button" class="btn btn-danger">Accept
+						and continue</button>
+				</center>
+			</div>
 
 
+			<section>
+				By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2018
+				<p class="section-head"></p>
+				<div id="status"></div>
+			</section>
 
- </div>
-  </div>
+			<section>
+				<div id="file-container" style="display: none">
+					Upload an image: <input type="file" id="files" name="files[]"
+						multiple=""> <a target="_blank" href="examples/">example
+						files</a>
+				</div>
+
+				<img style="display: none" id="cat" src="examples/00000047_005.png"
+					width="224" height="224" />
+			</section>
+			<div id="predictions"></div>
+		</div>
+	</div>
 </body>
 
 
-<script src="system.js?v=1.2"></script>
+<script src="system.js?v=1.5"></script>
 
 </html>

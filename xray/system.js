@@ -58,22 +58,33 @@ function display_size_data(){
 const IMAGE_SIZE = 224;
 const TOPK_PREDICTIONS = 10;
 let mobilenet;
+let chestgrad;
 let mobileaenet;
-
 let catElement;
-
+let grad_fns;
 
 const run = async () => {
 	status('Loading model...');
-	var t=setInterval(display_size_data,100);
+	var t=setInterval(display_size_data,500);
 	const MODEL_PATH = 'models/chestxnet1';
 	mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
 	const AEMODEL_PATH = 'models/chestae1';
 	mobileaenet = await tf.loadFrozenModel(AEMODEL_PATH + "/tensorflowjs_model.pb", AEMODEL_PATH + "/weights_manifest.json");
-	status('Loading model into memory');
 	clearInterval(t);
-
-	mobilenet.predict(tf.zeros([1, 3, IMAGE_SIZE, IMAGE_SIZE])).dispose();
+//	status('Loading gradients...');
+//	
+//	grad_fns = []
+//	for (var i = 0; i < 3; i++) {
+//		console.log(i)
+//		grad_fn = tf.grad(x => mobilenet.predict(x).squeeze().slice(i,1));
+//		grad_fns.push(grad_fn)
+//	}
+	status('Loading model into memory...');
+	
+	chestgrad = tf.valueAndGrad(x => mobilenet.predict(x))
+	
+//	mobilenet.predict(tf.zeros([1, 3, IMAGE_SIZE, IMAGE_SIZE])).dispose();
+//	mobileaenet.predict(tf.zeros([1, 1, 64, 64])).dispose();
 	status('');
 
 	catElement = document.getElementById('cat');
@@ -89,6 +100,8 @@ const run = async () => {
 	document.getElementById('file-container').style.display = '';
 };
 
+let batched
+let grads
 async function predict(imgElement) {
 	status('Predicting...');
 	const startTime = performance.now();
@@ -118,41 +131,43 @@ async function predict(imgElement) {
 	recScore = rec.mean().dataSync()
 	console.log(recScore);
 	
+    const img = tf.fromPixels(imgElement).toFloat();
 	
-	///tf.toPixels(aa.add(1).div(3).pow(4),document.getElementById("aa"))
+    const normalized = img.div(tf.scalar(255));
+
+    batched = normalized.mean(2).reshape([1, 1, IMAGE_SIZE, IMAGE_SIZE]).tile([1,3,1,1])
 	
-	
-	
-	output = tf.tidy(() => {
-	  
-	    const img = tf.fromPixels(imgElement).toFloat();
-	
-	    const normalized = img.div(tf.scalar(255));
-	
-	    const batched = normalized.mean(2).reshape([1, 1, IMAGE_SIZE, IMAGE_SIZE]).tile([1, 3,1,1])
+	var [output, grad] = tf.tidy(() => {
+	 
 	    
-	    const result = mobilenet.execute(batched, ["Sigmoid", "Relu", "Relu_1", "Relu_3", "Relu_14"])
-	
-	    return result
+	    const temp = mobilenet.executor.checkTensorForDisposal
+	    mobilenet.executor.checkTensorForDisposal=function(){}
+	    
+	    const {value, grad} = chestgrad(batched);
+	    
+	    mobilenet.executor.checkTensorForDisposal = temp
+	    
+	    return [value, grad]
     
 	});
   
-	logits = await output[0].data()
+	logits = await output.data()
 
 	layers = []
 	
 	layers.push(["OOD error",rec.reshape([64,64])])
   
-	layers.push(["layer1 mean",output[1].mean(0).abs().mean(0)])
-//	layers.push(["layer2",output[2].mean(0).abs().mean(0)])
-//	layers.push(["layer3",output[3].mean(0).abs().mean(0)])
-//	layers.push(["layer4",output[4].mean(0).abs().mean(0)])
-	layers.push(["layer1 max",output[1].mean(0).abs().max(0)])
-	layers.push(["layer2 max",output[2].mean(0).abs().max(0)])
-	layers.push(["layer3 max",output[3].mean(0).abs().max(0)])
-	layers.push(["layer4 max",output[4].mean(0).abs().max(0)])
-  
-	//console.log(logits)
+	layers.push(["grad",grad.mean(0).abs().max(0)])
+	
+//	grad_fn = tf.grad(x => mobilenet.predict(x).squeeze().slice(0,1));
+//	
+//    const temp = mobilenet.executor.checkTensorForDisposal
+//    mobilenet.executor.checkTensorForDisposal=function(){}
+//	specificgrad = grad_fn(batched)
+//	mobilenet.executor.checkTensorForDisposal = temp
+//	
+//	layers.push(["specificgrad",specificgrad.mean(0).abs().max(0)])
+	
 
 	const classes = await distOverClasses(logits)
 
@@ -323,7 +338,6 @@ async function showResults(imgElement, layers, classes, recScore) {
   
 	const probsContainer = document.createElement('div');
 	probsContainer.className="col-xs-2";
-	//probsContainer.style.width = "200px"
 	
 	if (recScore > 0.5){
 		const row = document.createElement('div');
@@ -331,6 +345,12 @@ async function showResults(imgElement, layers, classes, recScore) {
 		row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + ")"
 		probsContainer.appendChild(row);
 	}else{
+		const row = document.createElement('div');
+		row.className = 'row';
+		row.textContent = "Disease Predictions";
+		row.style.fontWeight= "600";
+		probsContainer.appendChild(row);
+		
 		for (let i = 0; i < classes.length; i++) {
 		    const row = document.createElement('div');
 		    row.className = 'row';
@@ -340,7 +360,7 @@ async function showResults(imgElement, layers, classes, recScore) {
 		    row.appendChild(classElement);
 		    const probsElement = document.createElement('div');
 		    probsElement.className = 'cell';
-		    probsElement.innerText = classes[i].probability.toFixed(3);
+		    probsElement.innerText = (classes[i].probability.toFixed(2)*100) + "%";
 		    scale = parseInt((1-classes[i].probability)*255)
 		    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
 		    row.appendChild(probsElement);
