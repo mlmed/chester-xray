@@ -95,8 +95,66 @@
 				<img style="display: none" id="cat" src="examples/00000047_005.png"
 					width="224" height="224" />
 			</section>
-			<div id="predictions"></div>
+
 		</div>
+		
+<div id="predictions">
+
+	<div id="predtemplate" class="row" style="display:none">
+		<div class="col-xs-3 imgviz">
+			<div>
+				<canvas class="inputimage" 
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
+			</div>
+			<br>
+			<center>Input Image</center>
+		</div>
+		<div class="col-xs-3 oodviz">
+		
+			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
+			
+			<div class="oodimagebox" style="position:relative;display:none">
+				<canvas class="inputimage" 
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
+			
+				<canvas class="oodimage" 
+				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5"></canvas>
+			</div>
+			<br>
+			<center>Out Of Distribution reconstruction error</center>
+		</div>
+		<div class="col-xs-3 gradviz">
+		
+			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
+			
+			<div class="gradimagebox" style="position:relative;display:none">
+				<canvas class="inputimage" 
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
+			
+				<canvas class="gradimage" 
+				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5"></canvas>
+			</div>
+			<br>
+			<center>Predictive image regions</center>
+		</div>
+		<div class="col-xs-3 predviz">
+		<center>
+		<b>Disease Predictions</b>
+		<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
+		
+		
+		<div class="predbox" style="width:100%">
+
+		</div>
+		</center>
+		</div>
+		<hr>
+	</div>
+
+
+</div>	
+<img id="cat" src="examples/00000047_005.png" style="display:none">
+		
 	</div>
 </body>
 
