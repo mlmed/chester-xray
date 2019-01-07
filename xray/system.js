@@ -117,6 +117,7 @@ async function predict(imgElement) {
 	try{
 		await predict_real(imgElement);
 	}catch(err) {
+		$(".loading").hide()
 		status("Error! " + err.message);
 		console.log(err)
 	}
@@ -419,7 +420,7 @@ async function showProbResults(predictionContainer, classes, recScore) {
 		    row.appendChild(classElement);
 		    const probsElement = document.createElement('div');
 		    probsElement.className = 'cell';
-		    probsElement.innerText = (classes[i].probability.toFixed(2)*100) + "%";
+		    probsElement.innerText = (parseInt(classes[i].probability*100)) + "%";
 		    scale = parseInt((1-classes[i].probability)*255)
 		    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
 		    row.appendChild(probsElement);
