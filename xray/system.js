@@ -99,7 +99,7 @@ async function run(){
 	catElement = document.getElementById('cat');
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
-		await predict(catElement);
+		predict(catElement);
 	} else {
 		catElement.onload = () => {
 			predict(catElement);
@@ -115,15 +115,18 @@ let currentpred
 async function predict(imgElement) {
 	
 	try{
+		$("#file-container #files").attr("disabled", true)
 		await predict_real(imgElement);
 	}catch(err) {
 		$(".loading").hide()
 		status("Error! " + err.message);
 		console.log(err)
 	}
+	$("#file-container #files").attr("disabled", false)
 }
 async function predict_real(imgElement) {
 	status('Predicting...');
+	
 	const startTime = performance.now();
 	
 	currentpred = $("#predtemplate").clone();
@@ -180,6 +183,9 @@ async function predict_real(imgElement) {
 	    return rec
 	});
 	
+	recScore = rec.mean().dataSync()
+	console.log(recScore);
+	
 	//////// display ood image
 	canvas = currentpred.find(".oodimage")[0]
 	layer = rec.reshape([64,64])
@@ -193,15 +199,16 @@ async function predict_real(imgElement) {
 	makeColor(d.data);
 	ctx.putImageData(d,0,0);
 	
-	canvas = currentpred.find(".oodviz .loading")[0].style.display = "none";
-	canvas = currentpred.find(".oodimagebox")[0].style.display = "block";
+	a = document.createElement("center")
+	a.innerText = "recScore:" + parseFloat(recScore).toFixed(2)
+	currentpred.find(".oodimagebox")[0].append(a)
+	
+	currentpred.find(".oodviz .loading")[0].style.display = "none";
+	currentpred.find(".oodimagebox")[0].style.display = "block";
 	////////////////////
 	
 	
 	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
-	
-	recScore = rec.mean().dataSync()
-	console.log(recScore);
 
 	status('Predicting disease...');
 	await sleep(100)
@@ -238,7 +245,32 @@ async function predict_real(imgElement) {
 	showProbResults(currentpred.find(".predbox")[0], classes, recScore)
 	currentpred.find(".predviz .loading")[0].style.display = "none";
 	
+
+	currentpred.find(".gradviz .loading").hide()
+	if (recScore < 0.5){
+		currentpred.find(".gradviz .computegrads").show()
+		
+		currentpred.find(".gradviz .computegrads").click(function(){
+			currentpred.find(".gradviz .computegrads").hide()
+			computeGrads(currentpred, batched);
+		});
+	}
+	
+
+	const totalTime = performance.now() - startTime;
+	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
+
+	//await showResults(imgElement, layers, classes, recScore);
+	console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
+	
+}
+
+async function computeGrads(currentpred, batched){
+	
 	status('Computing gradients...');
+	$("#file-container #files").attr("disabled", true)
+	
+	currentpred.find(".gradviz .loading")[0].style.display = "block";
 	
 	await sleep(100)
 	
@@ -270,18 +302,15 @@ async function predict_real(imgElement) {
 	makeColor(d.data);
 	ctx.putImageData(d,0,0);
 	
-	canvas = currentpred.find(".gradviz .loading")[0].style.display = "none";
-	canvas = currentpred.find(".gradimagebox")[0].style.display = "block";
+	currentpred.find(".gradviz .loading")[0].style.display = "none";
+	currentpred.find(".gradimagebox")[0].style.display = "block";
 	////////////////////
 	
-
-	const totalTime = performance.now() - startTime;
-	status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
-
-	//await showResults(imgElement, layers, classes, recScore);
-	console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
+	status('');
+	$("#file-container #files").attr("disabled", false)
 	
 }
+
 
 async function distOverClasses(values){
 	
