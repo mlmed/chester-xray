@@ -101,10 +101,10 @@ async function run(){
 	catElement = document.getElementById('cat');
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
-		predict(catElement);
+		predict(catElement, "Example Image");
 	} else {
 		catElement.onload = () => {
-			predict(catElement);
+			predict(catElement, "Example Image");
 		};
 	}
 
@@ -114,12 +114,12 @@ async function run(){
 let batched
 let grads
 let currentpred
-async function predict(imgElement) {
+async function predict(imgElement, name) {
 	
 	try{
 		$("#file-container #files").attr("disabled", true)
 		const startTime = performance.now();
-		await predict_real(imgElement);
+		await predict_real(imgElement, name);
 		
 		$(".loading").each((k,v) => {v.style.display = "none"});
 		const totalTime = performance.now() - startTime;
@@ -132,7 +132,7 @@ async function predict(imgElement) {
 	}
 	$("#file-container #files").attr("disabled", false)
 }
-async function predict_real(imgElement) {
+async function predict_real(imgElement, name) {
 	status('Predicting...');
 	
 	const startTime = performance.now();
@@ -156,6 +156,8 @@ async function predict_real(imgElement) {
 	
 	//currentpred.find(".inputimage").attr("src", imgElement.src)
 	currentpred[0].style.display="block";
+	
+	currentpred.find(".imagename").text(name)
 	
     img = tf.fromPixels(imgElement).toFloat();
 	
@@ -579,12 +581,8 @@ filesElement.addEventListener('change', evt => {
     reader.onload = e => {
       let img = document.createElement('img');
       img.src = e.target.result;
-      img.style.minHeight = IMAGE_SIZE
-      img.style.minWidth = IMAGE_SIZE
-      //img.width = IMAGE_SIZE;
-      //img.height = IMAGE_SIZE;
 
-      img.onload = () => predict(img);
+      img.onload = () => predict(img, f.name);
     }; 
 
 

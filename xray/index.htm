@@ -87,9 +87,8 @@
 
 			<section>
 				<div id="file-container" style="display: none">
-					Upload an image: <input type="file" id="files" name="files[]"
-						multiple=""> <a target="_blank" href="examples/">example
-						files</a>
+					Process an image locally: <input type="file" id="files" name="files[]"
+						multiple=""> <a target="_blank" href="examples/">Download example files</a>
 				</div>
 			</section>
 
@@ -97,7 +96,10 @@
 		
 <div id="predictions">
 
-	<div id="predtemplate" class="row" style="display:none">
+	<div id="predtemplate" style="width:100%;display:none">
+		<div class="col-xs-12" style="background-color:lightgray;margin-bottom: 10px">
+		<center><span class="imagename">&nbsp;</span></center>
+		</div>
 		<div class="col-xs-3 imgviz">
 			<div>
 				<canvas class="inputimage" 
@@ -153,7 +155,7 @@
 
 
 </div>	
-<img id="cat" src="examples/00000001_002-Cardiomegaly-Effusion.png" style="display:none">
+<img id="cat" src="examples/00000001_001-Cardiomegaly-Emphysema.png" style="display:none">
 		
 	</div>
 </body>
