@@ -5,6 +5,9 @@
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
 	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
 	<script async src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	
+	<link rel="stylesheet" href="res/magnify.css">
+	<script async src="res/magnify.js"></script>
 
 <title>O-CXR</title>
 <script src="res/tf.js"></script>
@@ -82,13 +85,11 @@
 			<section>
 				By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2018
 				<p class="section-head"></p>
-				<div id="status"></div>
 			</section>
-
+<center><div id="status"></div></center>
 			<section>
 				<div id="file-container" style="display: none">
-					Process an image locally: <input type="file" id="files" name="files[]"
-						multiple=""> <a target="_blank" href="examples/">Download example files</a>
+					Process an image locally: <input type="file" id="files" name="files[]" multiple=""> <a target="_blank" href="examples/">Download example files</a>
 				</div>
 			</section>
 
@@ -100,55 +101,68 @@
 		<div class="col-xs-12" style="background-color:lightgray;margin-bottom: 10px">
 		<center><span class="imagename">&nbsp;</span></center>
 		</div>
+		<div class="col-xs-12" style="padding:0px;margin-bottom: 10px">
+		<div class="col-xs-3 ">
+			<center style="">Input Image</center></div>
+		<div class="col-xs-3 ">
+			<center style="">Out Of Distribution reconstruction error
+			<br><span style="font-size: x-small">Heatmap where the image varies from the training distribution.</span>
+			</center></div>
+		<div class="col-xs-3 ">
+			<center style="">Predictive image regions
+			<br><span style="font-size: x-small">Heatmap of image regions which influence the prediction.</span>
+			</center></div>
+		<div class="col-xs-3 ">
+			<center style=""><b>Disease Predictions</b>
+			<br><span style="font-size: x-small">Probability of a disease.</span>
+			</center>
+		</div>
+		</div>
+		
+		<div class="col-xs-12"  style="padding:0px;">
 		<div class="col-xs-3 imgviz">
-			<div>
-				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
-			</div>
+				<canvas class="inputimage"
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
 			<br>
-			<center>Input Image</center>
 		</div>
 		<div class="col-xs-3 oodviz">
-		
 			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 			
 			<div class="oodimagebox" style="position:relative;display:none">
 				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
 			
 				<canvas class="oodimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5"></canvas>
+				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated"></canvas>
 			</div>
 			<br>
-			<center>Out Of Distribution reconstruction error</center>
+			
 		</div>
 		<div class="col-xs-3 gradviz">
-		
 			<center><button style="margin-top:40%;display:none" type="button" class="computegrads btn btn-danger">
 			Compute image regions
 			</button></center>
-			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
+			<center class="loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 			
 			<div class="gradimagebox" style="position:relative;display:none">
 				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;opacity: 0.5"></canvas>
+				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
 			
 				<canvas class="gradimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5"></canvas>
+				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated"></canvas>
 			</div>
 			<br>
-			<center>Predictive image regions</center>
+			
 		</div>
 		<div class="col-xs-3 predviz">
-		<center>
-		<b>Disease Predictions</b>
 		<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 		
-		
+		<center>
 		<div class="predbox" style="width:100%">
 
 		</div>
 		</center>
+		</div>
 		</div>
 		<hr>
 	</div>
@@ -160,6 +174,7 @@
 	</div>
 </body>
 
+<canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
 
 <script src="system.js?v=1.6"></script>
 

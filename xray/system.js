@@ -60,6 +60,7 @@ function sleep(ms) {
 
 const IMAGE_SIZE = 224;
 const RECSCORE_THRESH = 0.35;
+const OODSCORE_THRESH = 1000;
 
 let mobilenet;
 let chestgrad;
@@ -184,8 +185,7 @@ async function predict_real(imgElement, name) {
     batched = cropImg.reshape([1, 1, IMAGE_SIZE, IMAGE_SIZE]).tile([1,3,1,1])
 	
     console.log("Prepared input image " + Math.floor(performance.now() - startTime) + "ms");
-	
-
+    
 	
 	status('Computing Reconstruction...');
 	
@@ -235,6 +235,41 @@ async function predict_real(imgElement, name) {
 	currentpred.find(".oodimagebox")[0].style.display = "block";
 	////////////////////
 	
+
+
+	// zoom does not work yet
+//	var main = currentpred.find(".inputimage")[0]
+//	var zoom = document.getElementById("zoom");
+//	var ctx = main.getContext("2d")
+//	var zoomCtx = zoom.getContext("2d");
+//
+//	main.addEventListener("mousemove", function(e){
+//	    console.log(e);
+//	    zoomCtx.fillStyle = "white";
+//	    zoomCtx.fillRect(0,0, zoom.width, zoom.height);
+//	    zoomCtx.drawImage(main, (e.x-$(main).offset().left)/2, e.y-$(main).offset().top, 100, 50, 0,0, 400, 200);
+//	    zoom.style.top = e.pageY + 10 + "px"
+//	    zoom.style.left = e.pageX + 10 + "px"
+//	    zoom.style.display = "block";
+//	});
+//
+//	main.addEventListener("mouseout", function(){
+//	    zoom.style.display = "none";
+//	});
+	
+	
+//  m = img.mean(2);
+//  oodscore = 
+//  img.slice([0,0,0],[-1,-1,1]).sub(m.expandDims(2)).abs().sum().add(
+//  img.slice([0,0,1],[-1,-1,1]).sub(m.expandDims(2)).abs().sum()).add( 
+//  img.slice([0,0,2],[-1,-1,1]).sub(m.expandDims(2)).abs().sum()).dataSync();
+//  console.log("oodscore " + oodscore);
+//	else if (oodscore > OODSCORE_THRESH){
+//		
+//		showProbErrorColor(currentpred.find(".predbox")[0], recScore)
+//		return
+
+	
 	
 	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
 
@@ -245,6 +280,8 @@ async function predict_real(imgElement, name) {
 		
 		showProbError(currentpred.find(".predbox")[0], recScore)
 		return
+		
+		
 	}else{
 		output = tf.tidy(() => {
 		 
@@ -454,10 +491,18 @@ function showProbError(predictionContainer, recScore) {
 	const row = document.createElement('div');
 	row.className = 'row';
 	row.style.width="100%"
-	row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + ")"
+	row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + "). It could be that your image is not cropped correctly or it was aquired using a protocal that is not in our training data. "
 	predictionContainer.appendChild(row);
 }
 
+function showProbErrorColor(predictionContainer) {
+	
+	const row = document.createElement('div');
+	row.className = 'row';
+	row.style.width="100%"
+	row.textContent = "This image appears to be a color image and we suspect it is not an xray."
+	predictionContainer.appendChild(row);
+}
 
 function showProbResults(predictionContainer, classes) {
 		
