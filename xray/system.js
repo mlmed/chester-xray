@@ -610,8 +610,8 @@ function showProbErrorColor(predictionContainer) {
 function showProbResults(predictionContainer, classes) {
 		
 	const probsContainer = document.createElement('div');
-	probsContainer.style.width="100%"
-	probsContainer.style.minWidth="220px"
+	probsContainer.style.width="100%";
+	probsContainer.style.minWidth="220px";
 	
 	for (let i = -1; i < classes.length; i++) {
 	    const row = document.createElement('div');
