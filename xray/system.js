@@ -32,6 +32,7 @@ function display_size_data_full(){
   }
 }
 
+prog = "\\"
 function display_size_data(){
   if (performance === undefined) {
     console.log("= Display Size Data: performance NOT supported");
@@ -51,7 +52,14 @@ function display_size_data(){
     	total+=1
     }
   }
-  status('Loading model... ' + total + "/" + (8+16));
+  if (prog == "\\"){
+	  prog="-";
+  }else if (prog == "-"){
+	  prog="/";
+  }else{
+	  prog="\\";
+  }
+  status('Loading model... ' + total + "/" + (8+16) + "  " + prog);
 }
 
 function sleep(ms) {
@@ -59,7 +67,7 @@ function sleep(ms) {
 }
 
 const IMAGE_SIZE = 224;
-const RECSCORE_THRESH = 0.35;
+const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 
 let mobilenet;
@@ -68,18 +76,57 @@ let mobileaenet;
 let catElement;
 let grad_fns;
 let img;
+//chestxnet1
+//const LABELS = ["Atelectasis", "Consolidation", "Infiltration",
+//    "Pneumothorax", "Edema", "Emphysema", "Fibrosis", "Effusion", "Pneumonia",
+//   "Pleural_Thickening", "Cardiomegaly", "Nodule", "Mass", "Hernia"]
+//chestxnet2
+const LABELS = ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
+    'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia'];
+
+const OP_POINT = [0.45879191, 0.03595452, 0.1531899 , 0.16395169, 0.24912722,
+    0.24753354, 0.16053931, 0.29415709, 0.36842737, 0.04312694,
+    0.00627019, 0.37612495, 0.40748873, 0.59332716];
+
+//	[['Atelectasis', 0.4587919116020202],
+//    ['Cardiomegaly', 0.03595452010631561],
+//    ['Effusion', 0.15318989753723145],
+//    ['Infiltration', 0.16395169496536255],
+//    ['Mass', 0.24912722408771515],
+//    ['Nodule', 0.24753354489803314],
+//    ['Pneumonia', 0.16053931415081024],
+//    ['Pneumothorax', 0.29415708780288696],
+//    ['Consolidation', 0.3684273660182953],
+//    ['Edema', 0.04312694445252418],
+//    ['Emphysema', 0.006270187441259623],
+//    ['Fibrosis', 0.3761249482631683],
+//    ['Pleural_Thickening', 0.40748873353004456],
+//    ['Hernia', 0.5933271646499634]]
 
 async function run(){
+	
+	try{
+		await run_real()
+	}catch(err) {
+		clearInterval(downloadStatus);
+		$(".loading").hide()
+		status("Error! " + err.message);
+		console.log(err)
+	}
+}
+
+let downloadStatus
+async function run_real(){
 	status('Loading model...');
 	const startTime = performance.now();
-	var t=setInterval(display_size_data,100);
-	const MODEL_PATH = 'models/chestxnet1';
+	downloadStatus=setInterval(display_size_data,100);
+	const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet2';
 	mobilenet = await tf.loadFrozenModel(MODEL_PATH + "/tensorflowjs_model.pb", MODEL_PATH + "/weights_manifest.json");
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-	const AEMODEL_PATH = 'models/chestae1';
+	const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestae1';
 	mobileaenet = await tf.loadFrozenModel(AEMODEL_PATH + "/tensorflowjs_model.pb", AEMODEL_PATH + "/weights_manifest.json");
 	console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-	clearInterval(t);
+	clearInterval(downloadStatus);
 //	status('Loading gradients...');
 //	
 //	grad_fns = []
@@ -102,10 +149,10 @@ async function run(){
 	catElement = document.getElementById('cat');
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
-		predict(catElement, "Example Image");
+		predict(catElement, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
 	} else {
 		catElement.onload = () => {
-			predict(catElement, "Example Image");
+			predict(catElement, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
 		};
 	}
 
@@ -119,6 +166,8 @@ async function predict(imgElement, name) {
 	
 	try{
 		$("#file-container #files").attr("disabled", true)
+		$(".computegrads").each((k,v) => {v.style.display = "none"});
+		
 		const startTime = performance.now();
 		await predict_real(imgElement, name);
 		
@@ -194,7 +243,7 @@ async function predict_real(imgElement, name) {
 	img_small.width = 64
 	img_small.height = 64
 	
-	rec = tf.tidy(() => {
+	let {recInput, recErr, rec} = tf.tidy(() => {
 		
 	    const img = tf.fromPixels(img_small).toFloat();
 		
@@ -204,20 +253,42 @@ async function predict_real(imgElement, name) {
 	    
 	    const batched2 = batched.mul(2).sub(1)
 	    
-	    const result = mobileaenet.predict(batched)
+	    const rec = mobileaenet.predict(batched)
 	
-	    const rec = batched.sub(result).pow(2)
+	    const recErr = batched.sub(rec).abs()
 	    
-	    return rec
+	    return {recInput:batched, recErr: recErr, rec: rec};
 	});
 	
-	recScore = rec.mean().dataSync()
+	recScore = recErr.mean().dataSync()
 	console.log(recScore);
 	
-	//////// display ood image
-	canvas = currentpred.find(".oodimage")[0]
+	
+	canvas_a = currentpred.find(".inputimage_rec")[0]
+	layer = recInput.reshape([64,64])
+	await tf.toPixels(layer.div(2).add(0.5),canvas_a);
+	
+	canvas_b = currentpred.find(".recimage")[0]
 	layer = rec.reshape([64,64])
-	await tf.toPixels(layer.div(layer.max()),canvas);	
+	await tf.toPixels(layer.div(2).add(0.5),canvas_b);
+	
+	// compute ssim
+	canvas = canvas_a
+	a = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+	canvas = canvas_b
+	b = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+	
+	// https://github.com/darosh/image-ssim-js
+	ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
+	console.log("ssim " + JSON.stringify(ssim));
+	
+	
+	
+	//////// display ood image
+
+	canvas = currentpred.find(".oodimage")[0]
+	layer = recErr.reshape([64,64])
+	await tf.toPixels(layer.div(2),canvas);
 	canvas.style.width = "100%";
 	canvas.style.height = "";
 	canvas.style.imageRendering = "pixelated";
@@ -225,16 +296,17 @@ async function predict_real(imgElement, name) {
 	ctx = canvas.getContext("2d");
 	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
 	makeColor(d.data);
+	makeTransparent(d.data)
 	ctx.putImageData(d,0,0);
 	
-	a = document.createElement("center")
-	a.innerText = "recScore:" + parseFloat(recScore).toFixed(2)
-	currentpred.find(".oodimagebox")[0].append(a)
+	scoreBox = document.createElement("center")
+	score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
+	scoreBox.innerText = score
+	currentpred.find(".oodimagebox")[0].append(scoreBox)
 	
 	currentpred.find(".oodviz .loading")[0].style.display = "none";
 	currentpred.find(".oodimagebox")[0].style.display = "block";
 	////////////////////
-	
 
 
 	// zoom does not work yet
@@ -272,13 +344,16 @@ async function predict_real(imgElement, name) {
 	
 	
 	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
-
+ 
 	status('Predicting disease...');
 	await sleep(100)
     
-	if (recScore > RECSCORE_THRESH){
+	can_predict = ssim.ssim > 0.30
+	
+	if (!can_predict){
 		
-		showProbError(currentpred.find(".predbox")[0], recScore)
+		
+		showProbError(currentpred.find(".predbox")[0], score)
 		return
 		
 		
@@ -287,7 +362,7 @@ async function predict_real(imgElement, name) {
 		 
 			const value = mobilenet.execute(batched, ["Sigmoid"])
 		    
-		    return value
+		    return value//.pow(2).div(2)
 	    
 		});
 	  
@@ -304,7 +379,7 @@ async function predict_real(imgElement, name) {
 		
 	
 		currentpred.find(".gradviz .loading").hide()
-		if (recScore < RECSCORE_THRESH){
+		if (can_predict){
 			currentpred.find(".gradviz .computegrads").show()
 			
 			currentpred.find(".gradviz .computegrads").click(function(){
@@ -358,6 +433,7 @@ async function computeGrads(thispred, batched){
 	ctx = canvas.getContext("2d");
 	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
 	makeColor(d.data);
+	makeTransparent(d.data)
 	ctx.putImageData(d,0,0);
 	
 	thispred.find(".gradviz .loading")[0].style.display = "none";
@@ -372,17 +448,24 @@ async function computeGrads(thispred, batched){
 
 async function distOverClasses(values){
 	
-	pathologies = ["Atelectasis", "Consolidation", "Infiltration",
-        "Pneumothorax", "Edema", "Emphysema", "Fibrosis", "Effusion", "Pneumonia",
-        "Pleural_Thickening", "Cardiomegaly", "Nodule", "Mass", "Hernia"]
+	pathologies = LABELS
 	
 	values = values.subarray(0,pathologies.length)
 	
 	const topClassesAndProbs = [];
 	for (let i = 0; i < values.length; i++) {
+		
+		if (values[i]<OP_POINT[i]){
+			normalized = values[i]/(OP_POINT[i]*2)
+		}else{
+			normalized = 1-((1-values[i])/((1-(OP_POINT[i]))*2))
+			
+		}
+		console.log(values[i] + "," + OP_POINT[i] + "->" + normalized)
+
 	    topClassesAndProbs.push({
 	      className: pathologies[i],
-	      probability: values[i]
+	      probability: normalized
 	    });
 	}
 	return topClassesAndProbs
@@ -485,13 +568,33 @@ function makeColor(data) {
 	    data[i+2] = Math.round(255*color[2]); // Invert Blue
 	  }
 	}
+function makeTransparent(pix) {
+	//var imgd = ctx.getImageData(0, 0, imageWidth, imageHeight),
+	//pix = imgd.data;
+	
+	for (var i = 0, n = pix.length; i <n; i += 4) {
+		var r = pix[i],
+		    g = pix[i+1],
+		    b = pix[i+2];
+		
+		if(g < 20){ 
+		    // If the green component value is higher than 150
+		    // make the pixel transparent because i+3 is the alpha component
+		    // values 0-255 work, 255 is solid
+		    pix[i + 3] = 0;
+		}
+	}
+	//ctx.putImageData(imgd, 0, 0);​
+}
 
-function showProbError(predictionContainer, recScore) {
+
+
+function showProbError(predictionContainer, score) {
 	
 	const row = document.createElement('div');
 	row.className = 'row';
 	row.style.width="100%"
-	row.textContent = "This image is too far out of our training distribution so we will not process it. (recScore:" + (Math.round(recScore * 100) / 100) + "). It could be that your image is not cropped correctly or it was aquired using a protocal that is not in our training data. "
+	row.textContent = "This image is too far out of our training distribution so we will not process it. (" + score + "). It could be that your image is not cropped correctly or it was aquired using a protocal that is not in our training data. "
 	predictionContainer.appendChild(row);
 }
 
@@ -508,25 +611,88 @@ function showProbResults(predictionContainer, classes) {
 		
 	const probsContainer = document.createElement('div');
 	probsContainer.style.width="100%"
+	probsContainer.style.minWidth="220px"
 	
-	for (let i = 0; i < classes.length; i++) {
+	for (let i = -1; i < classes.length; i++) {
 	    const row = document.createElement('div');
 	    row.className = 'row';
 	    const classElement = document.createElement('div');
 	    classElement.className = 'cell';
-	    classElement.innerText = classes[i].className;
-	    row.appendChild(classElement);
+	    
 	    const probsElement = document.createElement('div');
-	    probsElement.className = 'cell';
-	    probsElement.innerText = (parseInt(classes[i].probability*100)) + "%";
-	    scale = parseInt((1-classes[i].probability)*255)
-	    probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
+	    if (i == -1){
+	    	classElement.innerText = "Name";
+	    	classElement.style.fontSize="x-small";
+	    	probsElement.className = 'cell';
+	    }else{
+	    	classElement.innerText = classes[i].className;
+	    	if (classes[i].probability > 0.6){
+	    		classElement.style.fontWeight = "900";
+	    	}
+	    	classElement.style.fontSize="small";
+	    	probsElement.className = 'cell gradient';
+	    	probsElement.style.borderBottomStyle="solid";
+	    	probsElement.style.borderColor = "white";
+	    	probsElement.style.borderWidth="2";
+	    }
+	    row.appendChild(classElement);
+	    
+	    
+	    
+	    probsElement.style.width="100%";
+	    probsElement.style.textAlign="left";
+	    probsElement.style.position="relative";
+	    
+	    if (i == -1){
+		    target = document.createElement('span');
+		    target.innerText = "Healthy";
+		    target.style.position="absolute";
+		    target.style.fontSize="x-small"
+		    target.style.left=0;
+		    probsElement.appendChild(target)
+		    
+		    target = document.createElement('span');
+		    target.innerText = "Risk";
+		    target.style.position="absolute";
+		    target.style.fontSize="x-small"
+		    target.style.right=0;
+		    probsElement.appendChild(target)
+		    
+		    
+	    }else{
+		    target = document.createElement('span');
+		    //target.innerText = "|";
+		    target.className="glyphicon glyphicon-asterisk"
+		    target.style.marginLeft="-7px"; //glyh is 14x14
+		    target.style.position="absolute";
+		    target.style.left=parseInt(classes[i].probability*100) + "%";
+		    target.style.fontWeight="900";
+		    probsElement.appendChild(target)
+	    }
+	    
+	    //probsElement.innerText = (parseInt(classes[i].probability*100)) + "%";
+	    //scale = parseInt((1-classes[i].probability)*255)
+	    //probsElement.style.backgroundColor = "rgb(255," + scale + "," + scale + ")";
 	    row.appendChild(probsElement);
 	    probsContainer.appendChild(row);
+	    
 	}
 
 	predictionContainer.appendChild(probsContainer);
 	
+	$(".gradient").hover(
+		function(e){
+			a=$(this).find("span")[0];
+			a.innerHTML=a.style.left
+//			if (parseInt(a.style.left)>60){
+//				a.style.marginLeft="-30px";
+//			}
+		},
+		function(e){
+			a=$(this).find("span")[0];
+			a.innerHTML="";
+		},
+	);
 }
 
 

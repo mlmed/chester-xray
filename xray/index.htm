@@ -9,10 +9,11 @@
 	<link rel="stylesheet" href="res/magnify.css">
 	<script async src="res/magnify.js"></script>
 
-<title>O-CXR</title>
+<title>Chester the AI Radiology Assistant</title>
 <script src="res/tf.js"></script>
+<script src="res/ssim.js"></script>
 <script src="res/js-colormaps.js"></script>
-
+<script src="res/jquery.sparkline.min.js"></script>
 
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
@@ -29,6 +30,11 @@
 
 
 <style>
+
+body {
+  padding-top: 70px;
+}
+
 .pred-container {
     margin-bottom: 20px;
   }
@@ -55,10 +61,72 @@
    padding: 0 !important;
    margin: 0 !important;
 }
+
+
+.gradient {
+  background-image:
+	linear-gradient(to right,green,white,#c12e2a)
+}
+
+
+
   </style>
 
 
 <script>
+
+function showAbout(){
+	$("#aboutbtn").addClass("active");
+	$(".about").show();
+	
+}
+
+function hideAbout(){
+	$("#aboutbtn").removeClass("active");
+	$(".about").hide();
+	setCookie('about','about',9999);
+}
+
+
+$(function(){
+	
+	if (getCookie("about") != "about"){
+		showAbout();
+	}
+	
+	$("#aboutbtn").click(function(){
+		
+		if (!$(".about").is(":visible")){
+			showAbout();
+		}else{
+			hideAbout();
+		}
+	});
+	
+});
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return "";
+}
 
 
 
@@ -66,9 +134,80 @@
 </script>
 
 <body>
+    <nav class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#"><img src="res/dr-convnet-icon.png"/></a>
+          <a  class="navbar-brand" href="#">Chester the AI Radiology Assistant</a>
+        </div>
+        <div id="navbar" class="navbar-collapse collapse">
+          <ul class="nav navbar-nav">
+          </ul>
+          <ul class="nav navbar-nav navbar-right">
+            <li id="aboutbtn"><a href="#">About</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
 	<div class="container" style="width: 100%">
 
-		<div class="row">
+
+	
+		<div class="col-sm-12" style="">
+		<div class="col-sm-2"></div>
+<div class="col-sm-8">
+
+          <div class="about" style="display:none;">
+            <h2 class="blog-post-title"><img src="res/dr-convnet-small.png">Chester the AI Radiology Assistant</h2>
+
+            <p>
+		This is a web based (but locally run) system for diagnosing chest X-Rays. 
+		Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. 
+		The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. 
+		The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. 
+			</p>
+
+            <center>
+            <img style="width:50%" src="res/interface.png"/>
+            </center>
+         
+        <b>Out Of Distribution reconstruction error:</b>
+        Image reconstruction using an ALI model trained on the training data. 
+        What is shown is a heatmap over the input image showing the difference between that image and the reconstructed image.
+        This will indicate the regions where the image is different from that is in the training data. 
+        <br>
+        
+        <b>Predictive image regions: </b>
+        The basic gradient saliency map approach discussed by [Simonyan 2014] is used. 
+        What is shown is a heatmap where the brighter each pixel is the more influence it can have on the predictions.
+        <br>
+        
+        <b>Disease Predictions:</b>
+        A probability indicating how likely the image contains the disease.
+        <br>
+        <br>
+        <b>More information:</b> http://arxiv.org/abs/xxxxxx
+        
+     	
+        
+        
+        <center><a href="javascript:hideAbout();">[hide this]</a></center>
+          <hr>
+          </div>
+
+
+        </div>
+				
+		</div>
+
+<div class="col-sm-12">
+
 			<div class="alert alert-warning" role="alert" style="width: 100%">
 				<center>
 					NOT FOR MEDICAL USE. This is a prototype system for diagnosing
@@ -81,7 +220,6 @@
 				</center>
 			</div>
 
-
 			<section>
 				By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2018
 				<p class="section-head"></p>
@@ -92,8 +230,8 @@
 					Process an image locally: <input type="file" id="files" name="files[]" multiple=""> <a target="_blank" href="examples/">Download example files</a>
 				</div>
 			</section>
+</div>
 
-		</div>
 		
 <div id="predictions">
 
@@ -128,7 +266,15 @@
 		<div class="col-xs-3 oodviz">
 			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 			
+			<span  style="position:relative;display:none">
+				<canvas class="recimage" 
+				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
+				<canvas class="inputimage_rec" 
+				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
+			</span>
+			
 			<div class="oodimagebox" style="position:relative;display:none">
+				
 				<canvas class="inputimage" 
 				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
 			
@@ -176,6 +322,6 @@
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
 
-<script src="system.js?v=1.6"></script>
+<script src="system.js?v=1.8"></script>
 
 </html>
