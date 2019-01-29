@@ -248,6 +248,8 @@ async function predict_real(imgElement, name) {
 	recScore = recErr.mean().dataSync()
 	console.log(recScore);
 	
+	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	
 	
 	canvas_a = currentpred.find(".inputimage_rec")[0]
 	layer = recInput.reshape([64,64])
@@ -256,6 +258,8 @@ async function predict_real(imgElement, name) {
 	canvas_b = currentpred.find(".recimage")[0]
 	layer = rec.reshape([64,64])
 	await tf.toPixels(layer.div(2).add(0.5),canvas_b);
+	
+	console.log("Wrote images " + Math.floor(performance.now() - startTime) + "ms");
 	
 	// compute ssim
 	canvas = canvas_a
@@ -267,7 +271,7 @@ async function predict_real(imgElement, name) {
 	ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
 	console.log("ssim " + JSON.stringify(ssim));
 	
-	
+	console.log("Computed SSIM " + Math.floor(performance.now() - startTime) + "ms");
 	
 	//////// display ood image
 
@@ -292,6 +296,8 @@ async function predict_real(imgElement, name) {
 	currentpred.find(".oodviz .loading")[0].style.display = "none";
 	currentpred.find(".oodimagebox")[0].style.display = "block";
 	////////////////////
+	
+	console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
 
 
 	// zoom does not work yet
@@ -328,7 +334,7 @@ async function predict_real(imgElement, name) {
 
 	
 	
-	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	
  
 	status('Predicting disease...');
 	await sleep(100)
@@ -345,17 +351,13 @@ async function predict_real(imgElement, name) {
 	}else{
 		output = tf.tidy(() => {
 		 
-			const value = mobilenet.execute(batched, ["Sigmoid"])
-		    
-		    return value//.pow(2).div(2)
-	    
+			return mobilenet.execute(batched, ["Sigmoid"])
 		});
-	  
-		
 	    
 		logits = await output.data()
 	
 		console.log("Computed logits and grad " + Math.floor(performance.now() - startTime) + "ms");
+		console.log("logits=" + logits)
 		
 		const classes = await distOverClasses(logits)
 		
@@ -374,10 +376,6 @@ async function predict_real(imgElement, name) {
 		}
 		
 	
-		//const totalTime = performance.now() - startTime;
-		//status(`Done in ${Math.floor(totalTime)}ms`); // Show the classes in the DOM.
-	
-		//await showResults(imgElement, layers, classes, recScore);
 		console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
 	}
 	
@@ -441,16 +439,16 @@ async function distOverClasses(values){
 	for (let i = 0; i < values.length; i++) {
 		
 		if (values[i]<OP_POINT[i]){
-			normalized = values[i]/(OP_POINT[i]*2)
+			value_normalized = values[i]/(OP_POINT[i]*2)
 		}else{
-			normalized = 1-((1-values[i])/((1-(OP_POINT[i]))*2))
+			value_normalized = 1-((1-values[i])/((1-(OP_POINT[i]))*2))
 			
 		}
-		console.log(values[i] + "," + OP_POINT[i] + "->" + normalized)
+		console.log(pathologies[i] + ",pred:" + values[i] + "," + "OP_POINT:" + OP_POINT[i] + "->normalized:" + value_normalized)
 
 	    topClassesAndProbs.push({
 	      className: pathologies[i],
-	      probability: normalized
+	      probability: value_normalized
 	    });
 	}
 	return topClassesAndProbs
