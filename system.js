@@ -97,6 +97,11 @@ async function run(){
 		$(".loading").hide()
 		status("Error! " + err.message);
 		console.log(err)
+		
+		if (err.message == "Failed to fetch"){
+			status("Error! Failed to fetch the neural network models. Try disabling your ad blocker as this may prevent models from being downloaded from a different domain. (There are no ads here)");
+		}
+
 	}
 }
 
