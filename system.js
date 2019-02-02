@@ -387,9 +387,27 @@ async function predict_real(imgElement, name) {
 }
 
 async function computeGrads(thispred, batched){
+
+	try{
+		status('Computing gradients...');
+		$("#file-container #files").attr("disabled", true)
+		
+		const startTime = performance.now();
+		await computeGrads_real(thispred, batched);
+		
+		const totalTime = performance.now() - startTime;
+		status(`Done in ${Math.floor(totalTime)}ms`);
+		
+	}catch(err) {
+		$(".loading").hide()
+		status("Error! " + err.message);
+		console.log(err)
+	}
 	
-	status('Computing gradients...');
-	$("#file-container #files").attr("disabled", true)
+	$("#file-container #files").attr("disabled", false)
+}
+
+async function computeGrads_real(thispred, batched){
 	
 	thispred.find(".gradviz .loading")[0].style.display = "block";
 	
@@ -408,8 +426,6 @@ async function computeGrads(thispred, batched){
     
 	});
 	
-	
-	
 	//////// display grad image
 	canvas = thispred.find(".gradimage")[0]
 	layer = grad.mean(0).abs().max(0)
@@ -427,9 +443,6 @@ async function computeGrads(thispred, batched){
 	thispred.find(".gradviz .loading")[0].style.display = "none";
 	thispred.find(".gradimagebox")[0].style.display = "block";
 	////////////////////
-	
-	status('');
-	$("#file-container #files").attr("disabled", false)
 	
 }
 
