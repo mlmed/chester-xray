@@ -177,31 +177,33 @@ function getCookie(cname) {
 
             <p>
 		This is a web based (but locally run) system for diagnosing chest X-Rays. 
-		Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. 
-		The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. 
-		The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. 
+		The patient data remains on your computer and all computation occurs in your browser. 
+		The system is designed to be used as a reference to confirm or aid in their diagnosis. 
+		
 			</p>
 
             <center>
-            <img style="width:50%" src="res/interface3.png"/>
+            <img style="width:70%" src="res/interface3.png"/>
             </center>
          
-        <b>Out Of Distribution reconstruction error:</b>
-        Image reconstruction using an ALI model trained on the training data. 
-        What is shown is a heatmap over the input image showing the difference between that image and the reconstructed image.
-        This will indicate the regions where the image is different from that is in the training data. 
+        The system contains three main components: <br>
+        
+        <b>Out Of Distribution error:</b>
+        This is a heatmap showing how the image differs from our training data. 
+        If the heatmap is too bright then the image is very different from our training data and the model will likely not work.
+        We will prevent an image from being processed if it is not similar enough to our training data in order to prevent errors in predictions.
         <br>
         
         <b>Predictive image regions: </b>
-        The basic gradient saliency map approach discussed by [Simonyan 2014] is used. 
-        What is shown is a heatmap where the brighter each pixel is the more influence it can have on the predictions.
+        The brighter each pixel is in the heatmap the more influence it can have on the predictions. 
+        If the color is bright it means that a change in these pixels will change the prediction. 
         <br>
         
         <b>Disease Predictions:</b>
-        A probability indicating how likely the image contains the disease.
+        A probability indicating how likely the image contains the disease. 50% means the network is not sure. 
         <br>
         <br>
-        <b>More information:</b> <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a>
+        <b>Technical Report:</b> <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a>
         
      	
         
@@ -255,8 +257,8 @@ function getCookie(cname) {
 		<div class="col-xs-3 ">
 			<center style="">Input Image</center></div>
 		<div class="col-xs-3 ">
-			<center style="">Out Of Distribution reconstruction error
-			<br><span style="font-size: x-small">Heatmap where the image varies from the training distribution.</span>
+			<center style="">Out Of Distribution error
+			<br><span style="font-size: x-small">Heatmap where the image varies from the training data.</span>
 			</center></div>
 		<div class="col-xs-3 ">
 			<center style="">Predictive image regions
@@ -264,7 +266,7 @@ function getCookie(cname) {
 			</center></div>
 		<div class="col-xs-3 ">
 			<center style=""><b>Disease Predictions</b>
-			<br><span style="font-size: x-small">Probability of a disease.</span>
+			<br><span style="font-size: x-small">Risk of a disease.</span>
 			</center>
 		</div>
 		</div>
