@@ -826,4 +826,12 @@ $("#agree").click(function(){
 	run();
 });
 
+$(function(){
+	if (findGetParameter("accept") == "true"){
+		$("#agree").hide()
+		hideAbout()
+		run();
+	}
+});
+
 //run();
