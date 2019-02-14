@@ -62,10 +62,6 @@ function display_size_data(){
   status('Loading model... ' + total + "/" + (8+16) + "  " + prog);
 }
 
-function sleep(ms) {
-	  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 const IMAGE_SIZE = 224;
 const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
@@ -87,6 +83,73 @@ const LABELS = ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass
 const OP_POINT = [0.45879191, 0.20330566, 0.34361544, 0.30163303, 0.50299263,
     0.36888129, 0.29530331, 0.6088959 , 0.46361208, 0.17098247,
     0.31575406, 0.51793754, 0.49182123, 0.59332716];
+
+let statusElement;
+let status;
+
+$(function(){
+	statusElement = document.getElementById('status');
+	
+	status = function(msg){statusElement.innerText = msg};
+});
+
+$(function(){
+	testBrowser();
+	$("#agree").click(function(){
+		$("#agree").hide()
+		run();
+	});
+	
+	if (findGetParameter("accept") == "true"){
+		$("#agree").hide()
+		hideAbout()
+		run();
+	}
+});
+
+function testBrowser(){
+	
+	try{
+		new Promise(resolve => setTimeout(resolve, 1));
+	}catch(err) {
+		status("Error! Your browser may be unsupported. (" + err.message + ")");
+		console.log(err)
+	}
+}
+
+let filesElement; 
+let predictionsElement;
+
+$(function(){
+	
+	filesElement = document.getElementById('files');
+	filesElement.addEventListener('change', evt => {
+	  let files = evt.target.files; // Display thumbnails & issue call to predict each image.
+	
+	  for (let i = 0, f; f = files[i]; i++) {
+	    // Only process image files (skip non image files)
+	    if (!f.type.match('image.*')) {
+	      continue;
+	    }
+	
+	    let reader = new FileReader();
+	    const idx = i;
+	
+	    reader.onload = e => {
+	      let img = document.createElement('img');
+	      img.src = e.target.result;
+	
+	      img.onload = () => predict(img, f.name);
+	    }; 
+	
+	
+	    reader.readAsDataURL(f);
+	  }
+	});
+
+	predictionsElement = document.getElementById('predictions');
+
+});
 
 async function run(){
 	
@@ -777,36 +840,11 @@ async function showResults(imgElement, layers, classes, recScore) {
 	
 }
 
-const filesElement = document.getElementById('files');
-filesElement.addEventListener('change', evt => {
-  let files = evt.target.files; // Display thumbnails & issue call to predict each image.
-
-  for (let i = 0, f; f = files[i]; i++) {
-    // Only process image files (skip non image files)
-    if (!f.type.match('image.*')) {
-      continue;
-    }
-
-    let reader = new FileReader();
-    const idx = i;
-
-    reader.onload = e => {
-      let img = document.createElement('img');
-      img.src = e.target.result;
-
-      img.onload = () => predict(img, f.name);
-    }; 
 
 
-    reader.readAsDataURL(f);
-  }
-});
-const statusElement = document.getElementById('status');
-
-const status = msg => statusElement.innerText = msg;
-
-const predictionsElement = document.getElementById('predictions');
-
+function sleep(ms) {
+	  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 function findGetParameter(parameterName) {
     var result = null,
@@ -821,17 +859,8 @@ function findGetParameter(parameterName) {
     return result;
 }
 
-$("#agree").click(function(){
-	$("#agree").hide()
-	run();
-});
 
-$(function(){
-	if (findGetParameter("accept") == "true"){
-		$("#agree").hide()
-		hideAbout()
-		run();
-	}
-});
+
+
 
 //run();

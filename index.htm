@@ -19,11 +19,6 @@
 <meta name="title" content="Chester the AI Radiology Assistant">
 <meta name="description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. ">
 
-<script src="res/tf.js"></script>
-<script src="res/ssim.js"></script>
-<script src="res/js-colormaps.js"></script>
-<script src="res/jquery.sparkline.min.js"></script>
-
 <script>
   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
@@ -33,6 +28,14 @@
   ga('create', 'UA-131584004-1', 'mlmed.org');
   ga('send', 'pageview');
 </script>
+
+<script src="system.js?v=1.12"></script>
+<script src="res/tf.min.js"></script>
+<script src="res/ssim.js"></script>
+<script src="res/js-colormaps.js"></script>
+<script src="res/jquery.sparkline.min.js"></script>
+
+
 	
 
 </head>
@@ -42,6 +45,7 @@
 
 body {
   padding-top: 70px;
+  min-height:800px;
 }
 
 .pred-container {
@@ -336,7 +340,7 @@ function getCookie(cname) {
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
 
-<script src="system.js?v=1.11"></script>
+
 
 
 <style>
