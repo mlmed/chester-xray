@@ -84,38 +84,6 @@ const OP_POINT = [0.45879191, 0.20330566, 0.34361544, 0.30163303, 0.50299263,
     0.36888129, 0.29530331, 0.6088959 , 0.46361208, 0.17098247,
     0.31575406, 0.51793754, 0.49182123, 0.59332716];
 
-let statusElement;
-let status;
-
-$(function(){
-	statusElement = document.getElementById('status');
-	
-	status = function(msg){statusElement.innerText = msg};
-});
-
-$(function(){
-	testBrowser();
-	$("#agree").click(function(){
-		$("#agree").hide()
-		run();
-	});
-	
-	if (findGetParameter("accept") == "true"){
-		$("#agree").hide()
-		hideAbout()
-		run();
-	}
-});
-
-function testBrowser(){
-	
-	try{
-		new Promise(resolve => setTimeout(resolve, 1));
-	}catch(err) {
-		status("Error! Your browser may be unsupported. (" + err.message + ")");
-		console.log(err)
-	}
-}
 
 let filesElement; 
 let predictionsElement;
