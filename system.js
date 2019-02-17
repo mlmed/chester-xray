@@ -107,7 +107,7 @@ $(function(){
 	      let img = document.createElement('img');
 	      img.src = e.target.result;
 	
-	      img.onload = () => predict(img, f.name);
+	      img.onload = () => predict(img, false, f.name);
 	    }; 
 	
 	
@@ -170,10 +170,10 @@ async function run_real(){
 	catElement = document.getElementById('cat');
 
 	if (catElement.complete && catElement.naturalHeight !== 0) {
-		predict(catElement, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
+		predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
 	} else {
 		catElement.onload = () => {
-			predict(catElement, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
+			predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
 		};
 	}
 
@@ -183,14 +183,14 @@ async function run_real(){
 let batched
 let grads
 let currentpred
-async function predict(imgElement, name) {
+async function predict(imgElement, isInitialRun, name) {
 	
 	try{
 		$("#file-container #files").attr("disabled", true)
 		$(".computegrads").each((k,v) => {v.style.display = "none"});
 		
 		const startTime = performance.now();
-		await predict_real(imgElement, name);
+		await predict_real(imgElement, isInitialRun, name);
 		
 		$(".loading").each((k,v) => {v.style.display = "none"});
 		const totalTime = performance.now() - startTime;
@@ -200,10 +200,14 @@ async function predict(imgElement, name) {
 		$(".loading").hide()
 		status("Error! " + err.message);
 		console.log(err)
+		
+		if (err.name == "BadBrowser"){
+			$("#file-container #files").attr("disabled", true);
+		}
 	}
 	$("#file-container #files").attr("disabled", false)
 }
-async function predict_real(imgElement, name) {
+async function predict_real(imgElement, isInitialRun, name) {
 	status('Predicting...');
 	
 	const startTime = performance.now();
@@ -285,6 +289,12 @@ async function predict_real(imgElement, name) {
 	console.log(recScore);
 	
 	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	
+	if (isInitialRun && (recScore > 0.27 || recScore < 0.26)){
+		error = new Error("Something wrong with this browser. Try refreshing the page.");
+		error.name="BadBrowser"
+		throw error
+	}
 	
 	
 	canvas_a = currentpred.find(".inputimage_rec")[0]
