@@ -290,8 +290,8 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
 	
-	if (isInitialRun && (recScore > 0.27 || recScore < 0.26)){
-		error = new Error("Something wrong with this browser. Try refreshing the page.");
+	if (isInitialRun && (recScore > 0.27 || recScore < 0.01)){
+		error = new Error("Something wrong with this browser. Try refreshing the page. (" + recScore + ")");
 		error.name="BadBrowser"
 		throw error
 	}
