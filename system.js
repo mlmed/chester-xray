@@ -89,30 +89,32 @@ let filesElement;
 let predictionsElement;
 
 $(function(){
-	
+
 	filesElement = document.getElementById('files');
 	filesElement.addEventListener('change', evt => {
-	  let files = evt.target.files; // Display thumbnails & issue call to predict each image.
-	
-	  for (let i = 0, f; f = files[i]; i++) {
-	    // Only process image files (skip non image files)
-	    if (!f.type.match('image.*')) {
-	      continue;
-	    }
-	
-	    let reader = new FileReader();
-	    const idx = i;
-	
-	    reader.onload = e => {
-	      let img = document.createElement('img');
-	      img.src = e.target.result;
-	
-	      img.onload = () => predict(img, false, f.name);
-	    }; 
-	
-	
-	    reader.readAsDataURL(f);
-	  }
+		let files = evt.target.files; // Display thumbnails & issue call to predict each image.
+
+
+		//for (let i = 0, f; f = files[i]; i++) {
+		f = files[0];
+		// Only process image files (skip non image files)
+		if (!f.type.match('image.*')) {
+			return;
+		}
+
+		let reader = new FileReader();
+		const idx = i;
+
+		reader.onload = e => {
+			let img = document.createElement('img');
+			img.src = e.target.result;
+
+			img.onload = () => predict(img, false, f.name);
+		}; 
+
+
+		reader.readAsDataURL(f);
+		//}
 	});
 
 	predictionsElement = document.getElementById('predictions');
