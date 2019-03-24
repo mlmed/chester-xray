@@ -228,7 +228,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 	currentpred = $("#predtemplate").clone();
 	currentpred.find(".loading").each((k,v) => {v.style.display = "block"});
-	currentpred[0].id = ""
+	currentpred[0].id = name
 	predictionsElement.insertBefore(currentpred[0], predictionsElement.firstChild);
 	
 	//currentpred.find(".inputimage").attr("src", imgElement.src)
@@ -345,7 +345,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 	currentpred.find(".oodimagebox")[0].style.display = "block";
 	currentpred.find(".oodtoggle")[0].style.display = "block";
 	
-	currentpred.find(".oodtoggle").click(function(){currentpred.find(".oodimage").toggle()});
+	currentpred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
 	
 	////////////////////
 	
@@ -422,8 +422,9 @@ async function predict_real(imgElement, isInitialRun, name) {
 			currentpred.find(".gradviz .computegrads").show()
 			
 			currentpred.find(".gradviz .computegrads").click(function(){
-				currentpred.find(".gradviz .computegrads").hide()
-				computeGrads(currentpred, batched);
+				thispred = $(this).closest(".prediction")
+				thispred.find(".gradviz .computegrads").hide()
+				computeGrads(thispred, batched);
 			});
 		}
 		
