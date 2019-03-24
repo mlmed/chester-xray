@@ -343,6 +343,10 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 	currentpred.find(".oodviz .loading")[0].style.display = "none";
 	currentpred.find(".oodimagebox")[0].style.display = "block";
+	currentpred.find(".oodtoggle")[0].style.display = "block";
+	
+	currentpred.find(".oodtoggle").click(function(){currentpred.find(".oodimage").toggle()});
+	
 	////////////////////
 	
 	console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
