@@ -29,7 +29,7 @@
   ga('send', 'pageview');
 </script>
 
-<script src="res/tf.min.js"></script>
+<script src="res/tf-1.3.1.min.js"></script>
 <script src="res/ssim.js"></script>
 <script src="res/js-colormaps.js"></script>
 <script src="res/jquery.sparkline.min.js"></script>
@@ -81,6 +81,14 @@ body {
 }
 
 
+.explain-btn{
+	font-size: xx-small;
+    height: 15pt;
+    margin: auto;
+    padding: 0px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
 
   </style>
 
@@ -311,9 +319,9 @@ function getCookie(cname) {
 			
 		</div>
 		<div class="col-xs-4 gradviz">
-			<center><button style="margin-top:40%;display:none" type="button" class="computegrads btn btn-danger">
-			Compute image regions
-			</button></center>
+			<center><div style="margin-top:40%;display:none" class="computegrads">
+			Press explain to compute an explanation
+			</div></center>
 			<center class="loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 			
 			<div class="gradimagebox" style="position:relative;display:none">
@@ -323,6 +331,7 @@ function getCookie(cname) {
 				<canvas class="gradimage" 
 				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated"></canvas>
 			</div>
+			<center><span class="desc"></span></center>
 			<br>
 			
 		</div>
@@ -348,7 +357,7 @@ function getCookie(cname) {
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
 
-<script src="system.js?v=1.15"></script>
+<script src="system.js?v=1.191"></script>
 <script>
 let statusElement;
 let status;
@@ -356,7 +365,7 @@ let status;
 $(function(){
 	statusElement = document.getElementById('status');
 	
-	status = function(msg){statusElement.innerText = msg};
+	status = function(msg){statusElement.innerText = msg;console.log("Status: " + msg)};
 });
 
 $(function(){
