@@ -77,14 +77,63 @@ let img;
 //    "Pneumothorax", "Edema", "Emphysema", "Fibrosis", "Effusion", "Pneumonia",
 //   "Pleural_Thickening", "Cardiomegaly", "Nodule", "Mass", "Hernia"]
 //chestxnet2
-const LABELS = ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
-    'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia'];
+//const LABELS = ['Atelectasis', 'Cardiomegaly', 'Effusion', 'Infiltration', 'Mass', 'Nodule', 'Pneumonia',
+//    'Pneumothorax', 'Consolidation', 'Edema', 'Emphysema', 'Fibrosis', 'Pleural_Thickening', 'Hernia'];
 
 //const OP_POINT = [0.45879191, 0.20330566, 0.34361544, 0.30163303, 0.50299263,
-//    0.36888129, 0.29530331, 0.6088959 , 0.46361208, 0.17098247,
-//    0.31575406, 0.51793754, 0.49182123, 0.59332716];
+//0.36888129, 0.29530331, 0.6088959 , 0.46361208, 0.17098247,
+//0.31575406, 0.51793754, 0.49182123, 0.59332716];
 
-const OP_POINT = Array(14).fill(0.5);
+const LABELS = ["Atelectasis", "Consolidation", "Infiltration",
+    "Pneumothorax", "Edema", "Emphysema", "Fibrosis", "Effusion", "Pneumonia",
+    "Pleural_Thickening", "Cardiomegaly", "Nodule", "Mass", "Hernia"]
+
+
+const OP_POINT = [0.10651981830596924,
+	 0.03304215893149376,
+	 0.16219697892665863,
+	 0.024247966706752777,
+	 0.014286902733147144,
+	 0.008996985852718353,
+	 0.020681504160165787,
+	 0.09284962713718414,
+	 0.01555431168526411,
+	 0.033134546130895615,
+	 0.012090340256690979,
+	 0.04846248775720596,
+	 0.03860514238476753,
+	 0.0004677231190726161]
+
+const Sensitivity95_POINTS = [0.02017068676650524,
+	 0.005972497630864382,
+	 0.051319558173418045,
+	 0.004047798924148083,
+	 0.0016440205508843064,
+	 0.004160635638982058,
+	 0.002172084990888834,
+	 0.017534643411636353,
+	 0.0014540302800014615,
+	 0.004899692256003618,
+	 0.004679250065237284,
+	 0.01017327792942524,
+	 0.007751578465104103,
+	 8.928100214689039e-07]
+
+const Specificity95_POINTS = [0.3228716254234314,
+	 0.14521081745624542,
+	 0.38081368803977966,
+	 0.12570014595985413,
+	 0.09329305589199066,
+	 0.03374328464269638,
+	 0.06354288756847382,
+	 0.3793969750404358,
+	 0.04392141103744507,
+	 0.10621027648448944,
+	 0.05445289984345436,
+	 0.16457954049110413,
+	 0.1631021648645401,
+	 0.004730472341179848]
+
 
 let filesElement; 
 let predictionsElement;
@@ -92,34 +141,45 @@ let predictionsElement;
 $(function(){
 
 	filesElement = document.getElementById('files');
-	filesElement.addEventListener('change', evt => {
-		let files = evt.target.files; // Display thumbnails & issue call to predict each image.
-
-
-		//for (let i = 0, f; f = files[i]; i++) {
-		f = files[0];
-		// Only process image files (skip non image files)
-		if (!f.type.match('image.*')) {
-			return;
+	filesElement.addEventListener('change', async evt => {
+		let files = evt.target.files;
+		
+		idxs = [...Array(files.length).keys()]
+		if (findGetParameter("randomorder") == "true"){
+			$("#info").text($("#info").text() + " In random order mode");
+			idxs.sort(() => Math.random() - 0.5);
 		}
+		//console.log(files.length);
+		for (var i = 0; i < idxs.length; i++) {
+			f = files[idxs[i]]
 
-		let reader = new FileReader();
-		const idx = i;
+			// Only process image files (skip non image files)
+			if (!f.type.match('image.*')) {
+				return;
+			}
+	
+			let reader = new FileReader();
+			const idx = i;
 
-		reader.onload = e => {
-			let img = document.createElement('img');
-			img.src = e.target.result;
+			var deferred = $.Deferred();
 
-			img.onload = () => predict(img, false, f.name);
-		}; 
-
-
-		reader.readAsDataURL(f);
-		//}
+			reader.onload = e => {
+		    	let img = document.createElement('img');
+		    	img.src = e.target.result;
+		    	
+		    	img.onload = async g => {
+		    		console.log("Processing " + f.name);
+			    	await predict(img, false, f.name);
+			        deferred.resolve();
+		    	}
+		    };
+		    reader.readAsDataURL(f);
+		    
+			await deferred.promise();
+		}
 	});
 
 	predictionsElement = document.getElementById('predictions');
-
 });
 
 async function run(){
@@ -414,9 +474,13 @@ async function predict_real(imgElement, isInitialRun, name) {
 		console.log("Computed logits and grad " + Math.floor(performance.now() - startTime) + "ms");
 		console.log("logits=" + logits)
 		
-		const classes = await distOverClasses(logits)
 		
-		showProbResults(currentpred,currentpred.find(".predbox")[0], classes, recScore)
+		currentpred[0].logits = logits
+		currentpred[0].classes = await distOverClasses(logits)
+		currentpred[0].Sensitivity95 = await distOverClasses(Sensitivity95_POINTS)
+		currentpred[0].Specificity95 = await distOverClasses(Specificity95_POINTS)
+		
+		showProbResults(currentpred)//, logits, recScore)
 		currentpred.find(".predviz .loading")[0].style.display = "none";
 		
 	
@@ -500,12 +564,11 @@ async function computeGrads_real(thispred, idx){
 	
 }
 
-
 async function distOverClasses(values){
 	
 	pathologies = LABELS
 	
-	values = values.subarray(0,pathologies.length)
+	//values = values.subarray(0,pathologies.length)
 	
 	const topClassesAndProbs = [];
 	for (let i = 0; i < values.length; i++) {
@@ -514,7 +577,6 @@ async function distOverClasses(values){
 			value_normalized = values[i]/(OP_POINT[i]*2)
 		}else{
 			value_normalized = 1-((1-values[i])/((1-(OP_POINT[i]))*2))
-			
 		}
 		console.log(pathologies[i] + ",pred:" + values[i] + "," + "OP_POINT:" + OP_POINT[i] + "->normalized:" + value_normalized)
 
@@ -662,7 +724,12 @@ function showProbErrorColor(predictionContainer) {
 	predictionContainer.appendChild(row);
 }
 
-function showProbResults(currentpred, predictionContainer, classes) {
+function showProbResults(currentpred) {
+		
+	classes = currentpred[0].classes
+	Sensitivity95 = currentpred[0].Sensitivity95
+	Specificity95 = currentpred[0].Specificity95
+	predictionContainer = currentpred.find(".predbox")[0]
 		
 	const probsContainer = document.createElement('div');
 	probsContainer.style.width="100%";
@@ -693,13 +760,12 @@ function showProbResults(currentpred, predictionContainer, classes) {
 	    row.appendChild(classElement);
 	    
 	    const explainElement = document.createElement('button');
-	    if (i == -1){
+	    if (i == -1 || classes[i].probability <= 0.6){
 	    	explainElement.style.visibility = "hidden"
 	    }else{
-	    	
 	    	explainElement.className = 'explain-btn btn btn-info';
 	    	explainElement.innerText = "explain";
-	    	$(explainElement).click(function(){computeGrads(currentpred,i)})
+	    	$(explainElement).click(function(){computeGrads(currentpred,i)})	    	
 	    }
 	    row.appendChild(explainElement);
 	    
@@ -734,6 +800,24 @@ function showProbResults(currentpred, predictionContainer, classes) {
 		    target.style.left=parseInt(classes[i].probability*100) + "%";
 		    target.style.fontWeight="900";
 		    probsElement.appendChild(target)
+		    
+//		    target = document.createElement('span');
+//		    //target.innerText = "|";
+//		    target.className="glyphicon glyphicon-menu-right"
+//		    target.style.marginLeft="-7px"; //glyh is 14x14
+//		    target.style.position="absolute";
+//		    target.style.left=parseInt(Sensitivity95[i].probability*100) + "%";
+//		    target.style.fontWeight="900";
+//		    probsElement.appendChild(target)
+//		    
+//		    target = document.createElement('span');
+//		    //target.innerText = "|";
+//		    target.className="glyphicon glyphicon-menu-left"
+//		    target.style.marginLeft="-7px"; //glyh is 14x14
+//		    target.style.position="absolute";
+//		    target.style.left=parseInt(Specificity95[i].probability*100) + "%";
+//		    target.style.fontWeight="900";
+//		    probsElement.appendChild(target)
 	    }
 	    
 	    //probsElement.innerText = (parseInt(classes[i].probability*100)) + "%";
