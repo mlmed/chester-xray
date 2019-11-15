@@ -259,7 +259,9 @@ function getCookie(cname) {
 <center><div id="status"></div></center>
 			<section>
 				<div id="file-container" style="display: none">
-					Process an image locally: <input type="file" id="files" name="files[]" multiple> <a target="_blank" href="examples/">Download example files</a>
+					Process an image locally: <input type="file" id="files" name="files[]" multiple> 
+					<a target="_blank" href="examples/">Download example files (opens new window)</a><br>
+					<a href="javascript:downloadCSV();">Download all predictions as CSV</a>
 				</div>
 			</section>
 </div>
@@ -321,7 +323,7 @@ function getCookie(cname) {
 		</div>
 		<div class="col-xs-4 gradviz">
 			<center><div style="margin-top:40%;display:none" class="computegrads">
-			Press explain to compute an explanation
+			
 			</div></center>
 			<center class="loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
 			
