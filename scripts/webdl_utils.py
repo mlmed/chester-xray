@@ -47,6 +47,7 @@ def convert_tf_pb2savedmodel(pb_file="chest.pb", savedmodel_folder="chest-savedm
             print("Selecting first element in list: {}".format(input_node))
         if output_node == None:   
             maybe_outputs = [(n.name, n.op) for n in gdef.node if n.op in ('Softmax','Sigmoid')]
+            maybe_outputs.append((gdef.node[-1].name, gdef.node[-1].op))
             print("Possible outputs:", maybe_outputs)
             output_node = "{}:0".format(maybe_outputs[0][0])
             print("Selecting first element in list: {}".format(output_node))
@@ -63,6 +64,7 @@ def convert_tf_pb2savedmodel(pb_file="chest.pb", savedmodel_folder="chest-savedm
                                              signature_def_map=sigs)
 
     builder.save()
+    return sigs
     
 def convert_tf2tfjs(savedmodel_folder="chest-test", tfjs_folder="chest-tfjs"):
     pass
