@@ -67,11 +67,12 @@ const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 
 //const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale';
-const MODEL_PATH = './models/chestxnet-45rot15trans15scale';
+const MODEL_PATH = './models/chestxnet-45rot15trans15scale4byte';
+//const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestae1';
+const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
 let chesternet;
-let chestgrad;
-let mobileaenet;
+let aechesternet;
 let catElement;
 let grad_fns;
 let img;
@@ -109,7 +110,6 @@ $(function(){
 			console.log("In random order mode");
 			idxs.sort(() => Math.random() - 0.5);
 		}
-		//console.log(files.length);
 		for (var i = 0; i < idxs.length; i++) {
 			f = files[idxs[i]]
 
@@ -166,8 +166,7 @@ async function run_real(){
 	downloadStatus=setInterval(display_size_data,100);
 	chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json");
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-//	const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestae1';
-//	mobileaenet = await tf.loadGraphModel(AEMODEL_PATH + "/weights_manifest.json");
+	aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json");
 	console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
 	clearInterval(downloadStatus);
 
@@ -176,7 +175,7 @@ async function run_real(){
 	await sleep(100)
 
 	chesternet.predict(tf.zeros([1, 3, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
-//	mobileaenet.predict(tf.zeros([1, 1, 64, 64])).dispose();
+	aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
 	status('');
 
 	catElement = document.getElementById('cat');
@@ -192,9 +191,9 @@ async function run_real(){
 	document.getElementById('file-container').style.display = '';
 };
 
-let batched
-let grads
-let currentpred
+let batched;
+let aebatched;
+let currentpred;
 async function predict(imgElement, isInitialRun, name) {
 
 	try{
@@ -287,54 +286,53 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 		const normalized = img.div(tf.scalar(255));
 
-		const batched = normalized.mean(2).reshape([1, 1, 64, 64])
+		aebatched = normalized.mean(2).reshape([1, 1, 64, 64])
 
-		const batched2 = batched.mul(2).sub(1)
+		//const batched2 = batched.mul(2).sub(1)
 
-		//const rec = mobileaenet.predict(batched)
+		const rec = aechesternet.predict(aebatched)
+		console.log(rec);
 
-		//const recErr = batched.sub(rec).abs()
+		const recErr = aebatched.sub(rec).abs()
 
-		return {recInput:batched, recErr: batched, rec: batched};
+		return {recInput:aebatched, recErr: recErr, rec: rec};
 	});
 
 
 
-//	recScore = recErr.mean().dataSync()
-//	console.log(recScore);
-
-//	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
-
-//	if (isInitialRun && (recScore > 0.27 || recScore < 0.01)){
-//	error = new Error("Something wrong with this browser. Try refreshing the page. (" + recScore + ")");
-//	error.name="BadBrowser"
-//	throw error
-//	}
+	recScore = recErr.mean().dataSync()
+	console.log("recScore" + recScore);
+	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	if (isInitialRun && (recScore > 0.27 || recScore < 0.01)){
+		error = new Error("Something wrong with this browser. Try refreshing the page. (" + recScore + ")");
+		error.name="BadBrowser"
+		throw error
+	}
 
 
 	canvas_a = currentpred.find(".inputimage_rec")[0]
 	layer = recInput.reshape([64,64])
 	await tf.browser.toPixels(layer.div(2).add(0.5),canvas_a);
 
-//	canvas_b = currentpred.find(".recimage")[0]
-//	layer = rec.reshape([64,64])
-//	await tf.toPixels(layer.div(2).add(0.5),canvas_b);
+	canvas_b = currentpred.find(".recimage")[0]
+	layer = rec.reshape([64,64])
+	await tf.browser.toPixels(layer.div(2).add(0.5),canvas_b);
 
-//	console.log("Wrote images " + Math.floor(performance.now() - startTime) + "ms");
+	console.log("Wrote images " + Math.floor(performance.now() - startTime) + "ms");
 
-//	// compute ssim
-//	canvas = canvas_a
-//	a = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
-//	canvas = canvas_b
-//	b = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+	// compute ssim
+	canvas = canvas_a
+	a = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+	canvas = canvas_b
+	b = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
 
-//	// https://github.com/darosh/image-ssim-js
-//	ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
-//	console.log("ssim " + JSON.stringify(ssim));
+	// https://github.com/darosh/image-ssim-js
+	ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
+	console.log("ssim " + JSON.stringify(ssim));
 
-//	console.log("Computed SSIM " + Math.floor(performance.now() - startTime) + "ms");
+	console.log("Computed SSIM " + Math.floor(performance.now() - startTime) + "ms");
 
-//	//////// display ood image
+	//////// display ood image
 
 	canvas = currentpred.find(".oodimage")[0]
 	layer = recErr.reshape([64,64])
@@ -343,26 +341,26 @@ async function predict_real(imgElement, isInitialRun, name) {
 	canvas.style.height = "";
 	canvas.style.imageRendering = "pixelated";
 
-//	ctx = canvas.getContext("2d");
-//	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
-//	makeColor(d.data);
-//	makeTransparent(d.data)
-//	ctx.putImageData(d,0,0);
+	ctx = canvas.getContext("2d");
+	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+	makeColor(d.data);
+	makeTransparent(d.data)
+	ctx.putImageData(d,0,0);
 
-//	scoreBox = document.createElement("center")
-//	score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
-//	scoreBox.innerText = score
-//	currentpred.find(".oodimagebox")[0].append(scoreBox)
+	scoreBox = document.createElement("center")
+	score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
+	scoreBox.innerText = score
+	currentpred.find(".oodimagebox")[0].append(scoreBox)
 
 	currentpred.find(".oodviz .loading")[0].style.display = "none";
 	currentpred.find(".oodimagebox")[0].style.display = "block";
 	currentpred.find(".oodtoggle")[0].style.display = "block";
 
-//	currentpred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
+	currentpred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
 
 //	////////////////////
 
-//	console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
 
 
 	// zoom does not work yet
@@ -398,13 +396,13 @@ async function predict_real(imgElement, isInitialRun, name) {
 //	return
 
 
-	recScore = 0.01
+//	recScore = 0.01
 
 
 	status('Predicting disease...');
 	await sleep(100)
 
-	can_predict = true;//ssim.ssim > 0.30
+	can_predict = ssim.ssim > 0.60
 
 	if (!can_predict){
 
@@ -427,8 +425,8 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 		currentpred[0].logits = logits
 		currentpred[0].classes = await distOverClasses(logits)
-		currentpred[0].Sensitivity95 = await distOverClasses(MODEL_CONFIG.Sensitivity95_POINTS)
-		currentpred[0].Specificity95 = await distOverClasses(MODEL_CONFIG.Specificity95_POINTS)
+		currentpred[0].PPV80 = await distOverClasses(MODEL_CONFIG.PPV80_POINT)
+		currentpred[0].NPV80 = await distOverClasses(MODEL_CONFIG.NPV80_POINT)
 
 		showProbResults(currentpred)//, logits, recScore)
 		currentpred.find(".predviz .loading")[0].style.display = "none";
@@ -673,8 +671,6 @@ function showProbErrorColor(predictionContainer) {
 function showProbResults(currentpred) {
 
 	classes = currentpred[0].classes
-	Sensitivity95 = currentpred[0].Sensitivity95
-	Specificity95 = currentpred[0].Specificity95
 	predictionContainer = currentpred.find(".predbox")[0]
 
 	const probsContainer = document.createElement('div');
@@ -747,21 +743,21 @@ function showProbResults(currentpred) {
 			target.style.fontWeight="900";
 			probsElement.appendChild(target)
 
-//			target = document.createElement('span');
-//			//target.innerText = "|";
-//			target.className="glyphicon glyphicon-menu-right"
-//			target.style.marginLeft="-7px"; //glyh is 14x14
-//			target.style.position="absolute";
-//			target.style.left=parseInt(Sensitivity95[i].probability*100) + "%";
-//			target.style.fontWeight="900";
-//			probsElement.appendChild(target)
+			target = document.createElement('span');
+			//target.innerText = "|";
+			target.className="glyphicon glyphicon-menu-right"
+			target.style.marginLeft="-7px"; //glyh is 14x14
+			target.style.position="absolute";
+			target.style.left=parseInt(currentpred[0].PPV80[i].probability*100) + "%";
+			target.style.fontWeight="900";
+			probsElement.appendChild(target)
 
 //			target = document.createElement('span');
 //			//target.innerText = "|";
 //			target.className="glyphicon glyphicon-menu-left"
 //			target.style.marginLeft="-7px"; //glyh is 14x14
 //			target.style.position="absolute";
-//			target.style.left=parseInt(Specificity95[i].probability*100) + "%";
+//			target.style.left=parseInt(currentpred[0].NPV95[i].probability*100) + "%";
 //			target.style.fontWeight="900";
 //			probsElement.appendChild(target)
 		}
