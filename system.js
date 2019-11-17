@@ -66,10 +66,10 @@ function display_size_data(){
 const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 
-//const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale';
-const MODEL_PATH = './models/chestxnet-45rot15trans15scale4byte';
-//const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestae1';
-const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
+//const MODEL_PATH = './models/chestxnet-45rot15trans15scale4byte';
+const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+//const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
 let chesternet;
 let aechesternet;
@@ -743,14 +743,14 @@ function showProbResults(currentpred) {
 			target.style.fontWeight="900";
 			probsElement.appendChild(target)
 
-			target = document.createElement('span');
-			//target.innerText = "|";
-			target.className="glyphicon glyphicon-menu-right"
-			target.style.marginLeft="-7px"; //glyh is 14x14
-			target.style.position="absolute";
-			target.style.left=parseInt(currentpred[0].PPV80[i].probability*100) + "%";
-			target.style.fontWeight="900";
-			probsElement.appendChild(target)
+//			target = document.createElement('span');
+//			//target.innerText = "|";
+//			target.className="glyphicon glyphicon-menu-right"
+//			target.style.marginLeft="-7px"; //glyh is 14x14
+//			target.style.position="absolute";
+//			target.style.left=parseInt(currentpred[0].PPV80[i].probability*100) + "%";
+//			target.style.fontWeight="900";
+//			probsElement.appendChild(target)
 
 //			target = document.createElement('span');
 //			//target.innerText = "|";
