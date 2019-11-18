@@ -159,15 +159,23 @@ async function run(){
 	}
 }
 
+realfetch = window.fetch
+cachedfetch = function(arg) {
+	console.log("Forcing cached version of " + arg)
+    return realfetch(arg, {cache: "force-cache"})
+}
+
 let downloadStatus
 async function run_real(){
 	status('Loading model...');
 	const startTime = performance.now();
 	downloadStatus=setInterval(display_size_data,100);
-	chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json");
+	window.fetch = cachedfetch
+	chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json", fetchFunc=cachedfetch);
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-	aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json");
+	aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json", fetchFunc=cachedfetch);
 	console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
+	window.fetch = realfetch
 	clearInterval(downloadStatus);
 
 	status('Loading model into memory...');
