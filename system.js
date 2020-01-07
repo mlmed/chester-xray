@@ -225,6 +225,7 @@ async function predict(imgElement, isInitialRun, name) {
 		}
 	}
 	$("#file-container #files").attr("disabled", false)
+	$("#files").val("");
 }
 async function predict_real(imgElement, isInitialRun, name) {
 	status('Predicting...');
