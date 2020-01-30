@@ -136,7 +136,9 @@ $(function(){
 			reader.readAsDataURL(f);
 
 			await deferred.promise();
+			
 		}
+		$("#files").val("");
 	});
 
 	predictionsElement = document.getElementById('predictions');
@@ -225,7 +227,6 @@ async function predict(imgElement, isInitialRun, name) {
 		}
 	}
 	$("#file-container #files").attr("disabled", false)
-	$("#files").val("");
 }
 async function predict_real(imgElement, isInitialRun, name) {
 	status('Predicting...');
