@@ -346,7 +346,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 	canvas = currentpred.find(".oodimage")[0]
 	layer = recErr.reshape([64,64])
-	await tf.browser.toPixels(layer,canvas);
+	await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
 	canvas.style.width = "100%";
 	canvas.style.height = "";
 	canvas.style.imageRendering = "pixelated";
