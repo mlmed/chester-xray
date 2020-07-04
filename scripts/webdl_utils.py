@@ -12,9 +12,10 @@ def convert_onnx2tf_pb(onnx_file="chest.onnx", pb_file="chest.pb"):
 
     # load onnx model
     onnx_model = onnx.load(onnx_file)
+    onnx_model.ir_version = 4
     onnx.checker.check_model(onnx_model)
 
-    optimized_model = onnx.optimizer.optimize(onnx_model)
+    optimized_model = onnx_model#onnx.optimizer.optimize(onnx_model)
     
     tf_rep = onnx_tf.backend.prepare(optimized_model, strict=False) 
     tf_rep.export_graph(pb_file)
