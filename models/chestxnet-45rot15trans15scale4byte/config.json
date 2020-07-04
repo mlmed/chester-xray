@@ -1,0 +1,37 @@
+{
+	"IMAGE_SIZE": 224,
+	"IMAGE_SCALE": 1,
+	"OUTPUT_NODE": "Sigmoid",
+	"LABELS": [
+		"Atelectasis",
+		"Consolidation",
+		"Infiltration",
+		"Pneumothorax",
+		"Edema",
+		"Emphysema",
+		"Fibrosis",
+		"Effusion",
+		"Pneumonia",
+		"Pleural_Thickening",
+		"Cardiomegaly",
+		"Nodule",
+		"Mass",
+		"Hernia"
+	],
+	"OP_POINT": [
+		0.10651981830596924,
+		0.03304215893149376,
+		0.16219697892665863,
+		0.024247966706752777,
+		0.014286902733147144,
+		0.008996985852718353,
+		0.020681504160165787,
+		0.09284962713718414,
+		0.01555431168526411,
+		0.033134546130895615,
+		0.012090340256690979,
+		0.04846248775720596,
+		0.03860514238476753,
+		0.0004677231190726161
+	]
+}

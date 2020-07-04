@@ -66,10 +66,10 @@ function display_size_data(){
 const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 
-const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
-//const MODEL_PATH = './models/chestxnet-45rot15trans15scale4byte';
-const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
-//const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+//const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
+const MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+//const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
 let chesternet;
 let aechesternet;
@@ -78,7 +78,7 @@ let grad_fns;
 let img;
 let filesElement; 
 let predictionsElement;
-let MODEL_CONFIG;
+//let MODEL_CONFIG;
 
 $(function(){
 
@@ -87,16 +87,16 @@ $(function(){
 	}
 
 	$.ajax({
-		url: MODEL_PATH + "/config.js",
-		dataType: "script",
+		url: MODEL_PATH + "/config.json",
+		dataType: "json",
 		async:false,
 		cache:false,
 		error:function(jqXHR, textStatus, errorThrown){
 			console.log(jqXHR);
 			console.log(textStatus + errorThrown);
 		},
-		success: function() {
-			window.MODEL_CONFIG = MODEL_CONFIG;
+		success: function(obj) {
+			window.MODEL_CONFIG = obj;
 		}
 	});
 
@@ -184,7 +184,7 @@ async function run_real(){
 
 	await sleep(100)
 
-	chesternet.predict(tf.zeros([1, 3, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
+	chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
 	aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
 	status('');
 
@@ -257,7 +257,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 	img = tf.browser.fromPixels(imgElement).toFloat();
 
-	normalized = img.div(tf.scalar(255));
+	normalized = img.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
 
 	meanImg = normalized.mean(2)
 	hOffset = Math.floor(img.shape[1]/2 - MODEL_CONFIG.IMAGE_SIZE/2)
@@ -270,14 +270,14 @@ async function predict_real(imgElement, isInitialRun, name) {
 	for (i=0; i < imgs.length; i++){
 		canvas = imgs[i]
 
-		await tf.browser.toPixels(cropImg,canvas);	
+		await tf.browser.toPixels(cropImg.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),canvas);	
 		canvas.style.width = "100%";
 		canvas.style.height = "";
 		canvas.style.imageRendering = "pixelated";
 	}
 	////////////////////
 
-	batched = cropImg.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE]).tile([1,3,1,1])
+	batched = cropImg.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])//.tile([1,3,1,1])
 	currentpred[0].batched = batched
 
 	console.log("Prepared input image " + Math.floor(performance.now() - startTime) + "ms");
@@ -424,7 +424,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 	}else{
 		output = tf.tidy(() => {
 
-			return chesternet.execute(batched, ["Sigmoid"])
+			return chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
 		});
 
 		logits = await output.data()
@@ -435,9 +435,11 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 		currentpred[0].logits = logits
 		currentpred[0].classes = await distOverClasses(logits)
-		currentpred[0].PPV80 = await distOverClasses(MODEL_CONFIG.PPV80_POINT)
-		currentpred[0].NPV80 = await distOverClasses(MODEL_CONFIG.NPV80_POINT)
+/*		currentpred[0].PPV80 = await distOverClasses(MODEL_CONFIG.PPV80_POINT)
+		currentpred[0].NPV80 = await distOverClasses(MODEL_CONFIG.NPV80_POINT)*/
 
+		currentpred[0].grads = [] // to cache grads
+		
 		showProbResults(currentpred)//, logits, recScore)
 		currentpred.find(".predviz .loading")[0].style.display = "none";
 
@@ -453,7 +455,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 //			});
 		}
 
-
+		currentpred.find(".oodtoggle").hide()
 		console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
 	}
 
@@ -490,35 +492,47 @@ async function computeGrads_real(thispred, idx){
 	batched = thispred[0].batched
 	thispred.find(".gradviz .loading")[0].style.display = "block";
 
-	await sleep(100)
+	//cache computation
+	if (thispred[0].grads[idx] == undefined){
+		await sleep(100)
+	
+		layer = tf.tidy(() => {
+	
+			chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
+			const grad = chestgrad(batched);
+	
+			const layer = grad.mean(0).abs().max(0)
+			return layer.div(layer.max())
+	
+		});
+		
+	
+		//////// display grad image
+		canvas = thispred.find(".gradimage")[0]
+		await tf.browser.toPixels(layer,canvas);	
+		canvas.style.width = "100%";
+		canvas.style.height = "";
+		canvas.style.imageRendering = "pixelated";
+	
+	    
+	
+	    ctx = canvas.getContext("2d");
+		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		makeColor(d.data);
+		makeTransparent(d.data)
+	
+	    thispred[0].grads[idx] = d
 
-	grad = tf.tidy(() => {
+    }
 
-		chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
-		const grad = chestgrad(batched);
-
-		return grad
-
-	});
-
-	//////// display grad image
-	canvas = thispred.find(".gradimage")[0]
-	layer = grad.mean(0).abs().max(0)
-	await tf.browser.toPixels(layer.div(layer.max()),canvas);	
-	canvas.style.width = "100%";
-	canvas.style.height = "";
-	canvas.style.imageRendering = "pixelated";
+    d = thispred[0].grads[idx]
 
 	ctx = canvas.getContext("2d");
-	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
-	makeColor(d.data);
-	makeTransparent(d.data)
 	ctx.putImageData(d,0,0);
 
 	thispred.find(".gradviz .loading")[0].style.display = "none";
 	thispred.find(".gradimagebox")[0].style.display = "block";
 	thispred.find(".gradviz .desc").text("Predictive regions for " + MODEL_CONFIG.LABELS[idx])
-	////////////////////
 
 }
 
@@ -644,11 +658,11 @@ function makeTransparent(pix) {
 	//pix = imgd.data;
 
 	for (var i = 0, n = pix.length; i <n; i += 4) {
-		var r = pix[i],
-		g = pix[i+1],
-		b = pix[i+2];
+//		var r = pix[i],
+		g = pix[i+1];
+//		b = pix[i+2];
 
-		if(g < 20){ 
+		if (g < 20){ 
 			// If the green component value is higher than 150
 			// make the pixel transparent because i+3 is the alpha component
 			// values 0-255 work, 255 is solid
@@ -704,6 +718,9 @@ function showProbResults(currentpred) {
 				classElement.style.fontWeight = "900";
 			}
 			classElement.style.fontSize="small";
+			classElement.style.whiteSpace="nowrap";
+			classElement.style.overflowX="scroll";
+			classElement.style.maxWidth="150px";
 			probsElement.className = 'cell gradient';
 			probsElement.style.borderBottomStyle="solid";
 			probsElement.style.borderColor = "white";
@@ -731,15 +748,16 @@ function showProbResults(currentpred) {
 			target = document.createElement('span');
 			target.innerText = "Healthy";
 			target.style.position="absolute";
-			target.style.fontSize="x-small"
-				target.style.left=0;
+			target.style.fontSize="x-small";
+			target.style.minWidth="100px"
+			target.style.left=0;
 			probsElement.appendChild(target)
 
 			target = document.createElement('span');
 			target.innerText = "Risk";
 			target.style.position="absolute";
-			target.style.fontSize="x-small"
-				target.style.right=0;
+			target.style.fontSize="x-small";
+			target.style.right=0;
 			probsElement.appendChild(target)
 
 
