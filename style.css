@@ -1,0 +1,64 @@
+body {
+  padding-top: 70px;
+  min-height:800px;
+}
+
+.pred-container {
+    margin-bottom: 20px;
+  }
+
+  .pred-container > div {
+    display: inline-block;
+    margin-right: 20px;
+    vertical-align: top;
+  }
+
+  .row {
+    display: table-row;
+  }
+  .cell {
+    display: table-cell;
+    padding-right: 20px;
+  }
+
+  #file-container {
+    margin-bottom: 20px;
+  }
+  
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+
+
+.gradient {
+  background-image:
+	linear-gradient(to right,green,white,#c12e2a)
+}
+
+
+.explain-btn{
+	font-size: xx-small;
+    height: 15pt;
+    margin: auto;
+    padding: 0px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.viewbox {
+	position:relative;
+	border-color:black;
+	border-width: 2px; 
+	padding:0px;
+}
+
+.viewbox .layer {
+	width:100%;
+	height:100%;
+	position:relative;
+	top:0px;
+	left:0px;
+	image-rendering:pixelated;
+	display:none;
+}
