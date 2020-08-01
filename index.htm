@@ -43,63 +43,8 @@
 <script src="res/jquery.sparkline.min.js"></script>
 
 
-	
-
+<link rel='stylesheet' href='style.css' type='text/css' media='all' />
 </head>
-
-
-<style>
-
-body {
-  padding-top: 70px;
-  min-height:800px;
-}
-
-.pred-container {
-    margin-bottom: 20px;
-  }
-
-  .pred-container > div {
-    display: inline-block;
-    margin-right: 20px;
-    vertical-align: top;
-  }
-
-  .row {
-    display: table-row;
-  }
-  .cell {
-    display: table-cell;
-    padding-right: 20px;
-  }
-
-  #file-container {
-    margin-bottom: 20px;
-  }
-  
-.nopadding {
-   padding: 0 !important;
-   margin: 0 !important;
-}
-
-
-.gradient {
-  background-image:
-	linear-gradient(to right,green,white,#c12e2a)
-}
-
-
-.explain-btn{
-	font-size: xx-small;
-    height: 15pt;
-    margin: auto;
-    padding: 0px;
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
-  </style>
-
 
 <script>
 
@@ -276,73 +221,42 @@ function getCookie(cname) {
 		
 <div id="predictions">
 
-	<div id="predtemplate" class="prediction" style="width:100%;display:none">
+	<div id="predtemplate" class="row prediction" style="width:100%;display:none">
 		<div class="col-xs-12" style="background-color:lightgray;margin-bottom: 10px">
 		<center><span class="imagename">&nbsp;</span></center>
 		</div>
 		<div class="col-xs-12" style="padding:0px;margin-bottom: 10px">
+		<div class="col-xs-8 "></div>
 		<div class="col-xs-4 ">
-			<center style="">Input Image</center></div>
-<!-- 		<div class="col-xs-4 ">
-			<center style="">Out Of Distribution error
-			<br><span style="font-size: x-small">Heatmap where the image varies from the training data.</span>
-			</center></div> -->
-		<div class="col-xs-4 ">
-			<center style="">Predictive image regions
-			<br><span style="font-size: x-small">Heatmap of image regions which influence the prediction.</span>
-			</center></div>
-		<div class="col-xs-4 ">
-			<center style=""><b>Disease Predictions</b>
-			<br><span style="font-size: x-small">Risk of a disease.</span>
+			<center style=""><b>Pathology Risk</b>
+			<br><span style="font-size: x-small">The white center region indicates that the model is not sure.</span>
 			</center>
 		</div>
 		</div>
 		
-		<div class="col-xs-12"  style="padding:0px;">
-		<div class="col-xs-4 imgviz-no" style="display:none">
-				<canvas class="inputimage"
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			<br>
-		</div>
-		<div class="col-xs-4 imgviz oodviz" >
-			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
-			
-			<span style="position:relative;display:none">
-				<canvas class="recimage" 
-				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
-				<canvas class="inputimage_rec" 
-				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
-			</span>
-			
-			<div class="oodimagebox" style="position:relative;display:none">
+		<div class="col-xs-8" style="">
+			<div class="viewbox" >
 				
-				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			
-				<canvas class="oodimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated;display:none"></canvas>
-			</div>
-			<center><button style="display:none" type="button" class="oodtoggle btn btn-danger btn-xs">
-			Show OOD heatmap
-			</button></center>
-			<br>
-			
-		</div>
-		<div class="col-xs-4 gradviz">
-			<center><div style="margin-top:40%;display:none" class="computegrads">
-			
-			</div></center>
-			<center class="loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
-			
-			<div class="gradimagebox" style="position:relative;display:none">
-				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			
-				<canvas class="gradimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated"></canvas>
+				<center class="layer loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
+				
+				<canvas class="layer inputimage"></canvas>
+				<canvas class="layer recimage"></canvas>
+				<canvas class="layer inputimage_rec"></canvas>
+				<canvas class="layer oodimage" style="opacity: 0.5;"></canvas>
+				<canvas class="layer gradimage" style="opacity: 0.5;"></canvas>
 			</div>
 			<center><span class="desc"></span></center>
-			<br>
+			</span>
+			
+			<center>
+				<button style="display:none" type="button" class="oodtoggle btn btn-danger btn-xs">
+				Show OOD heatmap
+				</button></center>
+				
+				<center><div style="margin-top:40%;display:none" class="computegrads">
+				
+				</div>
+			</center>
 			
 		</div>
 		<div class="col-xs-4 predviz">
@@ -360,9 +274,9 @@ function getCookie(cname) {
 
 
 </div>	
-<img id="cat" src="examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg" style="display:none">
+<img id="defaultImage" src="examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg" style="display:none" />
 		
-	</div>
+</div>
 </body>
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
@@ -448,11 +362,11 @@ and
   </tr>
   <tr>
     <td class="tg-0lax">Version</td>
-    <td class="tg-0lax">2.0 (Old versions: <a href="/tools/xray-v1">v1</a>)</td>
+    <td class="tg-0lax">3.0 PROTOTYPE (Old versions: <a href="/tools/xray-v1">v1</a>)</td>
   </tr>
   <tr>
     <td class="tg-0lax">Prediction Model</td>
-    <td class="tg-0lax">DenseNet-121 (Input 224x224) chestxnet-45rot15trans15scale4byte</td>
+    <td class="tg-0lax">DenseNet-121 (Input 224x224) xrv-all-45rot15trans15scale (TorchXRayVision)</td>
   </tr>
   <tr>
     <td class="tg-0lax">Out of Distribtion Model</td>
@@ -460,7 +374,7 @@ and
   </tr>
   <tr>
     <td class="tg-0lax">Training data</td>
-    <td class="tg-0lax">NIH Chest-xray14 - Clinical Center, Bethesda, Maryland, USA</td>
+    <td class="tg-0lax">7 datasets</td>
   </tr>
   <tr>
     <td class="tg-0lax">Samples</td>
