@@ -128,7 +128,7 @@ function getCookie(cname) {
         </div>
       </div>
     </nav>
-	<div class="container" style="width: 100%">
+	<div class="container" style="width: 100%;min-width: 1024px;">
 
 
 	
@@ -190,32 +190,44 @@ function getCookie(cname) {
 
 <div class="col-sm-12">
 
-			<div class="alert alert-warning" role="alert" style="width: 100%">
-				<center>
-					NOT FOR MEDICAL USE. This is a prototype system for diagnosing
-					chest x-rays using neural networks. All processing is done on your
-					device and images are not sent to the server. If you continue you
-					assume all liability when using the system. A neural network model
-					(~150mb) will be downloaded to your browser.
-					<button id="agree" type="button" class="btn btn-danger">Accept NOT FOR MEDICAL USE</button>
-				</center>
-			</div>
+	<div class="alert alert-warning" role="alert" style="width: 100%">
+		<center>
+			NOT FOR MEDICAL USE. This is a prototype system for diagnosing
+			chest x-rays using neural networks. All processing is done on your
+			device and images are not sent to the server. If you continue you
+			assume all liability when using the system. A neural network model
+			(~150mb) will be downloaded to your browser.
+			<button id="agree" type="button" class="btn btn-danger">Accept NOT FOR MEDICAL USE</button>
+		</center>
+	</div>
 
-			<section>
-				By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
-				New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br>
-				<span id="info" style="color:red"></span>	
+	<div class="col-sm-12">
+	<div style="float:right;">
+		<span style="" >Made by:
+		<a href="https://mlmed.org"><img style="width:200px" src="res/mlmed.png"/></a>
+		and
+		<a href="https://mila.quebec"><img style="width:150px" src="res/mila-medical-logo-new-small.png"/></a>
+		</span>
+	</div>
+				
+	By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
+	New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br>
+	
+	</div>
 
-				<p class="section-head"></p>
-			</section>
-<center><div id="status"></div></center>
-			<section>
-				<div id="file-container" style="display: none">
-					Process an image locally: <input type="file" id="files" name="files[]" multiple> 
-					<a target="_blank" href="examples/">Download example files (opens new window)</a><br>
-					<a href="javascript:downloadCSV();">Download all predictions as CSV</a>
-				</div>
-			</section>
+	<div class="col-sm-12">
+		<div id="file-container" style="display: none">
+			Process an image locally: <input type="file" id="files" name="files[]" multiple> 
+			<a target="_blank" href="examples/">Download example files (opens new window)</a><br>
+			<a href="javascript:downloadCSV();">Download all predictions as CSV</a>
+		</div>
+	</div>
+	
+	<div class="col-sm-12">
+		<span id="info" style="color:red"></span>	
+		<center><div id="status"></div></center>
+	</div>
+	
 </div>
 
 		
@@ -226,8 +238,10 @@ function getCookie(cname) {
 		<center><span class="imagename">&nbsp;</span></center>
 		</div>
 		<div class="col-xs-12" style="padding:0px;margin-bottom: 10px">
-		<div class="col-xs-8 "></div>
-		<div class="col-xs-4 ">
+		<div class="col-xs-8">
+			<center style=""><b>Image</b>
+		</div>
+		<div class="col-xs-4">
 			<center style=""><b>Pathology Risk</b>
 			<br><span style="font-size: x-small">The white center region indicates that the model is not sure.</span>
 			</center>
@@ -235,28 +249,26 @@ function getCookie(cname) {
 		</div>
 		
 		<div class="col-xs-8" style="">
-			<div class="viewbox" >
-				
-				<center class="layer loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
-				
+		<center>
+			<div class="viewbox">
+				<canvas class="layer inputimage_highres"></canvas>
 				<canvas class="layer inputimage"></canvas>
 				<canvas class="layer recimage"></canvas>
-				<canvas class="layer inputimage_rec"></canvas>
 				<canvas class="layer oodimage" style="opacity: 0.5;"></canvas>
 				<canvas class="layer gradimage" style="opacity: 0.5;"></canvas>
+				<center class="layer loading" style="display:none;margin-top:5%;width:100%;"><img style="width:400px;" alt="Loading..." src="res/loading1.gif"/></center>
 			</div>
+		</center>
 			<center><span class="desc"></span></center>
 			</span>
 			
 			<center>
 				<button style="display:none" type="button" class="oodtoggle btn btn-danger btn-xs">
 				Show OOD heatmap
-				</button></center>
-				
-				<center><div style="margin-top:40%;display:none" class="computegrads">
-				
-				</div>
+				</button>
 			</center>
+				
+			<center><div style="margin-top:40%;display:none" class="computegrads"></div></center>
 			
 		</div>
 		<div class="col-xs-4 predviz">
@@ -318,44 +330,10 @@ function testBrowser(){
 
 </script>
 
-<style>
-#chat-link {
-	position: fixed;
-	right: 5px;
-	bottom: 10px;
-	background: #fff;
-	border: 1px solid #e0e0e0;
-	padding: 5px 15px 10px;
-	border-radius: 5px 0 0 5px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	color: #979faf
-}
 
-.glyphicon-envelope {
-	text-align: center;
-	line-height: 26px;
-	margin-right: 5px;
-	position: relative
-}
-</style>
+<br>
 
 <center>
-
-<span style="" >Made by <br>
-<a href="https://mlmed.org"/><img style="width:200px" src="res/mlmed.png"/></a>
-and
-<a href="https://mila.quebec"/><img style="width:150px" src="res/mila-medical-logo-new-small.png"/></a>
-</span>
-<br>
-<br>
-
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg .tg-baqh{text-align:center;vertical-align:top}
-.tg .tg-0lax{text-align:left;vertical-align:top}
-</style>
 <table class="tg">
   <tr>
     <th class="tg-baqh" colspan="2">System Information</th>

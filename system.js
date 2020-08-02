@@ -146,8 +146,8 @@ $(function(){
 async function run(){
 
 	try{
-		//await load_model();
-		await load_model_debug();
+		await load_model();
+		//await load_model_debug();
 		
 		await run_demo();
 		
@@ -233,12 +233,14 @@ async function run_demo(){
 		predict(imgElement, true, "Example Image (" + imgElement.src.substring(imgElement.src.lastIndexOf('/')+1)+ ")");
 		};
 	imgElement.src = "examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg";
+/*	imgElement.width = MODEL_CONFIG.IMAGE_SIZE
+	imgElement.height = MODEL_CONFIG.IMAGE_SIZE*/
 	
 	
 }
 
 
-let batched;
+//let batched;
 let aebatched;
 let currentpred;
 async function predict(imgElement, isInitialRun, name) {
@@ -266,28 +268,40 @@ async function predict(imgElement, isInitialRun, name) {
 	$("#file-container #files").attr("disabled", false)
 }
 
+function prepare_image_resize_crop(imgElement, size){
+	
+	orig_width = imgElement.width
+	orig_height = imgElement.height
+	if (orig_width < orig_height){
+		imgElement.width = size
+		imgElement.height = Math.floor(size*orig_height/orig_width)
+	}else{
+		imgElement.height = size
+		imgElement.width = Math.floor(size*orig_width/orig_height)
+	}
+	
+	console.log("img wxh: " + orig_width + ", " + orig_height + " => " + imgElement.width + ", " + imgElement.height)	
+	
+	img = tf.browser.fromPixels(imgElement).toFloat();
+	
+	hOffset = Math.floor(img.shape[1]/2 - size/2)
+	wOffset = Math.floor(img.shape[0]/2 - size/2)
+	
+	img_cropped = img.slice([wOffset,hOffset],[size,size])
+	
+	img_normalized = img_cropped.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
+	meanImg = img_normalized.mean(2);
+	
+	return meanImg
+}
 
 function prepare_image(currentpred, imgElement){
 	
-	if (imgElement.width < imgElement.height){
-		imgElement.width = MODEL_CONFIG.IMAGE_SIZE
-		imgElement.height = Math.floor(MODEL_CONFIG.IMAGE_SIZE*imgElement.height/imgElement.width)
-	}else{
-		imgElement.height = MODEL_CONFIG.IMAGE_SIZE
-		imgElement.width = Math.floor(MODEL_CONFIG.IMAGE_SIZE*imgElement.width/imgElement.height)
-	}
+	currentpred[0].img_original = tf.browser.fromPixels(imgElement).toFloat();
 
-	console.log("img wxh: " + imgElement.width + ", " + imgElement.height + " => " + imgElement.width + ", " + imgElement.height)	
+	currentpred[0].img_highres = prepare_image_resize_crop(imgElement, Math.max(imgElement.width, imgElement.height));
 	
-	currentpred[0].img = tf.browser.fromPixels(imgElement).toFloat();
-	
-	currentpred[0].img_normalized = currentpred[0].img.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
-
-	meanImg = currentpred[0].img_normalized.mean(2)
-	hOffset = Math.floor(currentpred[0].img.shape[1]/2 - MODEL_CONFIG.IMAGE_SIZE/2)
-	wOffset = Math.floor(currentpred[0].img.shape[0]/2 - MODEL_CONFIG.IMAGE_SIZE/2)
-
-	currentpred[0].img_cropped = meanImg.slice([wOffset,hOffset],[MODEL_CONFIG.IMAGE_SIZE,MODEL_CONFIG.IMAGE_SIZE])
+	currentpred[0].img_input = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
 	
 }
 
@@ -310,30 +324,26 @@ async function predict_real(imgElement, isInitialRun, name) {
 	prepare_image(currentpred, imgElement);
 
 	//////// display input image
-	imgs = currentpred.find(".inputimage")
-	for (i=0; i < imgs.length; i++){
-		canvas = imgs[i]
-
-		await tf.browser.toPixels(currentpred[0].img_cropped.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),canvas);	
-/*		canvas.style.width = "100%";
-		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";*/
-	}
+	img = currentpred.find(".inputimage_highres")
+	await tf.browser.toPixels(currentpred[0].img_highres.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	currentpred.find(".inputimage_highres").show()
+/*	img = currentpred.find(".inputimage")
+	await tf.browser.toPixels(currentpred[0].img_input.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	currentpred.find(".inputimage").show()*/
+	await sleep(GUI_WAITTIME)
 	////////////////////
-
-	currentpred[0].batched = currentpred[0].img_cropped.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])//.tile([1,3,1,1])
 
 	console.log("Prepared input image " + Math.floor(performance.now() - startTime) + "ms");
 
-
-//	status('Computing Reconstruction...');
-
-	img_small = document.createElement('img');
-	img_small.src = imgElement.src
-	img_small.width = 64
-	img_small.height = 64
-
 	if (typeof AEMODEL_PATH !== 'undefined'){
+		
+		//	status('Computing Reconstruction...');
+	
+		img_small = document.createElement('img');
+		img_small.src = imgElement.src
+		img_small.width = 64
+		img_small.height = 64
+		
 		let {recInput, recErr, rec} = tf.tidy(() => {
 	
 			const img = tf.browser.fromPixels(img_small).toFloat();
@@ -352,8 +362,6 @@ async function predict_real(imgElement, isInitialRun, name) {
 			return {recInput:aebatched, recErr: recErr, rec: rec};
 		});
 	
-	
-	
 		recScore = recErr.mean().dataSync()
 		console.log("recScore" + recScore);
 		console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
@@ -362,7 +370,6 @@ async function predict_real(imgElement, isInitialRun, name) {
 			error.name="BadBrowser"
 			throw error
 		}
-	
 
 		canvas_a = currentpred.find(".inputimage_rec")[0]
 		layer = recInput.reshape([64,64])
@@ -415,62 +422,50 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 		can_predict = ssim.ssim > 0.60
 		
-	//	////////////////////
+		//	////////////////////
 	
 		console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
 	}else{
 		recScore = 0.01;
 		can_predict = true;
 	}
-
-
-	status('Predicting disease...');
-	await sleep(GUI_WAITTIME)
-
 	
+	status('Predicting disease...');
 
 	if (!can_predict){
-
 
 		showProbError(currentpred.find(".predbox")[0], score)
 		return
 
-
 	}else{
 		output = tf.tidy(() => {
 
-			return chesternet.execute(currentpred[0].batched, [MODEL_CONFIG.OUTPUT_NODE])
+			const batched = currentpred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
+			return chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
 		});
-
+		
+		await sleep(GUI_WAITTIME)
+		
 		logits = await output.data()
 
 		console.log("Computed logits and grad " + Math.floor(performance.now() - startTime) + "ms");
 		console.log("logits=" + logits)
 
 
-		currentpred[0].logits = logits
-		currentpred[0].classes = await distOverClasses(logits)
-/*		currentpred[0].PPV80 = await distOverClasses(MODEL_CONFIG.PPV80_POINT)
-		currentpred[0].NPV80 = await distOverClasses(MODEL_CONFIG.NPV80_POINT)*/
+		currentpred[0].logits = logits;
+		currentpred[0].classes = await distOverClasses(logits);
 
-		currentpred[0].grads = [] // to cache grads
+		currentpred[0].grads = []; // to cache grads
 		
 		showProbResults(currentpred)//, logits, recScore)
-		currentpred.find(".predviz .loading")[0].style.display = "none";
+		currentpred.find(".predviz .loading").hide();
+
+		currentpred.find(".loading").hide();
+
+		currentpred.find(".computegrads").show();
 
 
-		currentpred.find(".gradviz .loading").hide()
-		if (can_predict){
-			currentpred.find(".gradviz .computegrads").show()
-
-//			currentpred.find(".gradviz .computegrads").click(function(){
-//			thispred = $(this).closest(".prediction")
-//			thispred.find(".gradviz .computegrads").hide()
-//			computeGrads(thispred, batched, [10]);
-//			});
-		}
-
-		currentpred.find(".oodtoggle").hide()
+		currentpred.find(".oodtoggle").hide();
 		console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
 	}
 
@@ -481,9 +476,9 @@ async function computeGrads(thispred, idx){
 	try{
 		status('Computing gradients...' + idx + " " + MODEL_CONFIG.LABELS[idx]);
 
-		thispred.find(".gradviz .computegrads").hide();
-		thispred.find(".gradimagebox").hide();
-		thispred.find(".gradviz .desc").text("");
+		thispred.find(".computegrads").hide();
+		//thispred.find(".gradimagebox").hide();
+		thispred.find(".desc").text("");
 
 		$("#file-container #files").attr("disabled", true)
 
@@ -505,7 +500,8 @@ async function computeGrads(thispred, idx){
 async function computeGrads_real(thispred, idx){
 
 	batched = thispred[0].batched
-	thispred.find(".gradviz .loading")[0].style.display = "block";
+	thispred.find(".viewbox .loading").show();
+	//await sleep(1000)
 
 	//cache computation
 	if (thispred[0].grads[idx] == undefined){
@@ -514,6 +510,7 @@ async function computeGrads_real(thispred, idx){
 		layer = tf.tidy(() => {
 	
 			chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
+			const batched = currentpred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
 			const grad = chestgrad(batched);
 	
 			const layer = grad.mean(0).abs().max(0)
@@ -525,9 +522,9 @@ async function computeGrads_real(thispred, idx){
 		//////// display grad image
 		canvas = thispred.find(".gradimage")[0]
 		await tf.browser.toPixels(layer,canvas);	
-		canvas.style.width = "100%";
+/*		canvas.style.width = "100%";
 		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";
+		canvas.style.imageRendering = "pixelated";*/
 	
 	    
 	
@@ -545,9 +542,9 @@ async function computeGrads_real(thispred, idx){
 	ctx = canvas.getContext("2d");
 	ctx.putImageData(d,0,0);
 
-	thispred.find(".gradviz .loading")[0].style.display = "none";
-	thispred.find(".gradimagebox")[0].style.display = "block";
-	thispred.find(".gradviz .desc").text("Predictive regions for " + MODEL_CONFIG.LABELS[idx])
+	thispred.find(".viewbox .loading").hide()
+	//thispred.find(".gradimagebox").show()
+	thispred.find(".desc").text("Predictive regions for " + MODEL_CONFIG.LABELS[idx])
 
 }
 
