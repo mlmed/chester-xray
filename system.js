@@ -141,6 +141,7 @@ $(function(){
 	});
 
 	predictionsElement = document.getElementById('predictions');
+		
 });
 
 async function run(){
@@ -180,7 +181,21 @@ async function load_model(){
 	const startTime = performance.now();
 	downloadStatus=setInterval(display_size_data,100);
 	window.fetch = cachedfetch
-	chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json", fetchFunc=cachedfetch);
+	
+	try{
+		chesternet = await tf.loadGraphModel('indexeddb://' + MODEL_PATH);
+	}catch{
+		chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json", fetchFunc=cachedfetch);
+		
+	}
+	try{
+		await chesternet.save('indexeddb://' + MODEL_PATH);
+	}catch{
+		// try to clean up the local caches
+		const dbs = await window.indexedDB.databases()
+		dbs.forEach(db => { window.indexedDB.deleteDatabase(db.name) })
+	}
+	
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
 	if (typeof AEMODEL_PATH !== 'undefined'){
 		aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json", fetchFunc=cachedfetch);
@@ -193,7 +208,7 @@ async function load_model(){
 
 	await sleep(GUI_WAITTIME)
 
-	chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
+	//chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
 	
 	if (typeof AEMODEL_PATH !== 'undefined'){
 		aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
@@ -215,27 +230,13 @@ async function load_model_debug(){
 
 async function run_demo(){
 	
-	console.log("run_demo");
-	
-/*	catElement = document.getElementById('cat');
-
-	if (catElement.complete && catElement.naturalHeight !== 0) {
-		predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
-	} else {
-		catElement.onload = () => {
-			predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
-		};
-	}*/
-	
+	console.log("run_demo");	
 	
 	var imgElement = new Image();
 	imgElement.onload = () => {
 		predict(imgElement, true, "Example Image (" + imgElement.src.substring(imgElement.src.lastIndexOf('/')+1)+ ")");
 		};
-	imgElement.src = "examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg";
-/*	imgElement.width = MODEL_CONFIG.IMAGE_SIZE
-	imgElement.height = MODEL_CONFIG.IMAGE_SIZE*/
-	
+	imgElement.src = "examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg";	
 	
 }
 
@@ -314,10 +315,28 @@ async function predict_real(imgElement, isInitialRun, name) {
 	currentpred = $("#predtemplate").clone();
 	currentpred.find(".loading").each((k,v) => {v.style.display = "block"});
 	currentpred[0].id = name
+	currentpred[0].grads = []; // to cache grads
 	predictionsElement.insertBefore(currentpred[0], predictionsElement.firstChild);
+	
+	$(".btn-reset-layers").click(function(){
+		
+		currentpred.find(".gradimage").hide();
+		reset_grad_btns(currentpred);
+	})
+	
+	$(".btn-invert-colors").click(function(){
+		
+		if (currentpred.find(".inputimage_highres").css("filter") == "invert(1)"){
+			currentpred.find(".inputimage_highres").css("filter", "invert(0)");
+			$(".btn-invert-colors").removeClass("active");
+		}else{
+			currentpred.find(".inputimage_highres").css("filter", "invert(1)");
+			$(".btn-invert-colors").addClass("active");
+		}
+	})
 
 	//currentpred.find(".inputimage").attr("src", imgElement.src)
-	currentpred[0].style.display="block";
+	currentpred.show();
 
 	currentpred.find(".imagename").text(name)
 	
@@ -398,9 +417,9 @@ async function predict_real(imgElement, isInitialRun, name) {
 		canvas = currentpred.find(".oodimage")[0]
 		layer = recErr.reshape([64,64])
 		await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
-		canvas.style.width = "100%";
+/*		canvas.style.width = "100%";
 		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";
+		canvas.style.imageRendering = "pixelated";*/
 	
 		ctx = canvas.getContext("2d");
 		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -454,15 +473,11 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 		currentpred[0].logits = logits;
 		currentpred[0].classes = await distOverClasses(logits);
-
-		currentpred[0].grads = []; // to cache grads
 		
 		showProbResults(currentpred)//, logits, recScore)
 		currentpred.find(".predviz .loading").hide();
-
 		currentpred.find(".loading").hide();
-
-		currentpred.find(".computegrads").show();
+		//currentpred.find(".computegrads").show();
 
 
 		currentpred.find(".oodtoggle").hide();
@@ -471,13 +486,34 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 }
 
-async function computeGrads(thispred, idx){
+function reset_grad_btns(thispred){
+	
+	thispred.find(".explain-btn").removeClass("active");
+	thispred.find(".explain-btn").removeClass("btn-primary");
+	thispred.find(".explain-btn").addClass("btn-info");
+}
+
+async function computeGrads(thispred, idx, explainElement){
 
 	try{
 		status('Computing gradients...' + idx + " " + MODEL_CONFIG.LABELS[idx]);
 
-		thispred.find(".computegrads").hide();
+		//thispred.find(".computegrads").hide();
 		//thispred.find(".gradimagebox").hide();
+		if ($(explainElement).hasClass("active")){
+			$(explainElement).addClass("btn-info");
+			$(explainElement).removeClass("btn-primary");
+			$(explainElement).removeClass("active");
+			thispred.find(".gradimage").hide();
+			return
+		}else{
+			reset_grad_btns(thispred);
+			
+			$(explainElement).removeClass("btn-info");
+			$(explainElement).addClass("btn-primary");
+			$(explainElement).addClass("active");
+		}
+
 		thispred.find(".desc").text("");
 
 		$("#file-container #files").attr("disabled", true)
@@ -499,7 +535,7 @@ async function computeGrads(thispred, idx){
 
 async function computeGrads_real(thispred, idx){
 
-	batched = thispred[0].batched
+	//batched = thispred[0].batched
 	thispred.find(".viewbox .loading").show();
 	//await sleep(1000)
 
@@ -507,10 +543,15 @@ async function computeGrads_real(thispred, idx){
 	if (thispred[0].grads[idx] == undefined){
 		await sleep(GUI_WAITTIME)
 	
+		//saveasdasd = await chestgrad.save('indexeddb://' + MODEL_PATH + "-chestgrad");
+		
+		//chestgrad = await tf.loadGraphModel('indexeddb://' + MODEL_PATH + "-chestgrad");
+	
 		layer = tf.tidy(() => {
 	
 			chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
-			const batched = currentpred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
+			
+			const batched = thispred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
 			const grad = chestgrad(batched);
 	
 			const layer = grad.mean(0).abs().max(0)
@@ -518,15 +559,9 @@ async function computeGrads_real(thispred, idx){
 	
 		});
 		
-	
 		//////// display grad image
 		canvas = thispred.find(".gradimage")[0]
 		await tf.browser.toPixels(layer,canvas);	
-/*		canvas.style.width = "100%";
-		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";*/
-	
-	    
 	
 	    ctx = canvas.getContext("2d");
 		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -534,13 +569,13 @@ async function computeGrads_real(thispred, idx){
 		makeTransparent(d.data)
 	
 	    thispred[0].grads[idx] = d
-
     }
 
     d = thispred[0].grads[idx]
 
 	ctx = canvas.getContext("2d");
 	ctx.putImageData(d,0,0);
+	thispred.find(".gradimage").show()
 
 	thispred.find(".viewbox .loading").hide()
 	//thispred.find(".gradimagebox").show()
@@ -749,7 +784,7 @@ function showProbResults(currentpred) {
 		}else{
 			explainElement.className = 'explain-btn btn btn-info';
 			explainElement.innerText = "explain";
-			$(explainElement).click(function(){computeGrads(currentpred,i)})	    	
+			$(explainElement).click(function(){computeGrads(currentpred,i,explainElement)})	    	
 		}
 		row.appendChild(explainElement);
 

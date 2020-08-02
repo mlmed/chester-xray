@@ -37,7 +37,7 @@
   ga('send', 'pageview');
 </script>
 
-<script src="res/tf-1.3.1.min.js"></script>
+<script src="res/tf-2.0.1.min.js"></script>
 <script src="res/ssim.js"></script>
 <script src="res/js-colormaps.js"></script>
 <script src="res/jquery.sparkline.min.js"></script>
@@ -225,7 +225,7 @@ function getCookie(cname) {
 	
 	<div class="col-sm-12">
 		<span id="info" style="color:red"></span>	
-		<center><div id="status"></div></center>
+		<center><div id="status" class="status"></div></center>
 	</div>
 	
 </div>
@@ -233,13 +233,28 @@ function getCookie(cname) {
 		
 <div id="predictions">
 
-	<div id="predtemplate" class="row prediction" style="width:100%;display:none">
-		<div class="col-xs-12" style="background-color:lightgray;margin-bottom: 10px">
+	<div id="predtemplate" class="prediction col-xs-12" style="display:none">
+		<div class="topbar">
 		<center><span class="imagename">&nbsp;</span></center>
 		</div>
 		<div class="col-xs-12" style="padding:0px;margin-bottom: 10px">
 		<div class="col-xs-8">
 			<center style=""><b>Image</b>
+<center>
+  <div class="btn-group">
+      <button class="btn btn-default btn-invert-colors" data-original-title="Invert colors">
+		<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-circle-half" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  <path fill-rule="evenodd" d="M8 15V1a7 7 0 1 1 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+		</svg> Invert colors
+	  </button>
+      <button class="btn btn-default btn-reset-layers" data-original-title="reset layers">
+      	<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-layers" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  <path fill-rule="evenodd" d="M3.188 8L.264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l-1.063.567L14.438 10 8 13.433 1.562 10 4.25 8.567 3.187 8z"/>
+		  <path fill-rule="evenodd" d="M7.765 1.559a.5.5 0 0 1 .47 0l7.5 4a.5.5 0 0 1 0 .882l-7.5 4a.5.5 0 0 1-.47 0l-7.5-4a.5.5 0 0 1 0-.882l7.5-4zM1.563 6L8 9.433 14.438 6 8 2.567 1.562 6z"/>
+		</svg> Reset layers
+</button>
+  </div>
+</center>
 		</div>
 		<div class="col-xs-4">
 			<center style=""><b>Pathology Risk</b>
@@ -249,16 +264,14 @@ function getCookie(cname) {
 		</div>
 		
 		<div class="col-xs-8" style="">
-		<center>
 			<div class="viewbox">
-				<canvas class="layer inputimage_highres"></canvas>
+				<canvas class="layer inputimage_highres baselayer"></canvas>
 				<canvas class="layer inputimage"></canvas>
 				<canvas class="layer recimage"></canvas>
 				<canvas class="layer oodimage" style="opacity: 0.5;"></canvas>
 				<canvas class="layer gradimage" style="opacity: 0.5;"></canvas>
 				<center class="layer loading" style="display:none;margin-top:5%;width:100%;"><img style="width:400px;" alt="Loading..." src="res/loading1.gif"/></center>
 			</div>
-		</center>
 			<center><span class="desc"></span></center>
 			</span>
 			
@@ -268,7 +281,7 @@ function getCookie(cname) {
 				</button>
 			</center>
 				
-			<center><div style="margin-top:40%;display:none" class="computegrads"></div></center>
+<!-- 			<center><div style="margin-top:40%;display:none" class="computegrads"></div></center> -->
 			
 		</div>
 		<div class="col-xs-4 predviz">
