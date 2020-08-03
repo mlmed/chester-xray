@@ -23,8 +23,6 @@ body {
 }
 
 
-
-
 .prediction {
     margin-bottom: 20px;
     padding-left:0px;
@@ -33,6 +31,10 @@ body {
 	-webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
 	-moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
 	box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+}
+
+.prediction .toolbar{
+	font-size: small;
 }
 
 .pred-container {
@@ -45,7 +47,8 @@ body {
   vertical-align: top;
 }
 
-.predviz {
+
+.predbox {
 	max-width: 400px;
 }
 
@@ -105,7 +108,6 @@ body {
 	right: 0px;
 	margin:auto;
 	image-rendering:pixelated;
-/* 	display:none; */
 }
 
 .status{
@@ -114,9 +116,6 @@ body {
 	margin-left:auto;margin-right:auto;
 }
 
-
-
-
 /* table */
 
 .tg  {border-collapse:collapse;border-spacing:0;}
@@ -124,3 +123,40 @@ body {
 .tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
 .tg .tg-baqh{text-align:center;vertical-align:top}
 .tg .tg-0lax{text-align:left;vertical-align:top}
+
+
+@keyframes blur1 {
+  0% {
+    filter: blur(0.89rem);
+  }
+  50% {
+    filter: blur(0.69rem);
+  }
+  100% {
+    filter: blur(0.89rem);
+  }
+}
+
+@keyframes blur2 {
+  0% {
+    filter: blur(3rem);
+  }
+  50% {
+    filter: blur(0.59rem);
+  }
+  100% {
+    filter: blur(3rem);
+  }
+}
+
+@keyframes blur3 {
+  0% {
+    filter: blur(1.5rem);
+  }
+  50% {
+    filter: blur(1rem);
+  }
+  100% {
+    filter: blur(1.5rem);
+  }
+}

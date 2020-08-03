@@ -63,20 +63,23 @@ function display_size_data(){
 	status('Loading model... ' + total + "/" + (8+16) + "  " + prog);
 }
 
+let SYSTEM = {};
+
 const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
-const GUI_WAITTIME = 10;
+const GUI_WAITTIME = 30;
 
 //const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
-const MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
 //const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
-//const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
-let chesternet;
+/*let chesternet;
 let aechesternet;
-let catElement;
-let filesElement; 
-let predictionsElement;
+let catElement;*/
+/*let filesElement; */
+/*let predictionsElement;*/
+
 //let MODEL_CONFIG;
 
 $(function(){
@@ -86,7 +89,7 @@ $(function(){
 	}
 
 	$.ajax({
-		url: MODEL_PATH + "/config.json",
+		url: SYSTEM.MODEL_PATH + "/config.json",
 		dataType: "json",
 		async:false,
 		cache:false,
@@ -100,8 +103,8 @@ $(function(){
 	});
 
 
-	filesElement = document.getElementById('files');
-	filesElement.addEventListener('change', async evt => {
+	SYSTEM.filesElement = document.getElementById('files');
+	SYSTEM.filesElement.addEventListener('change', async evt => {
 		let files = evt.target.files;
 
 		idxs = [...Array(files.length).keys()]
@@ -140,16 +143,21 @@ $(function(){
 		$("#files").val("");
 	});
 
-	predictionsElement = document.getElementById('predictions');
+	SYSTEM.predictionsElement = document.getElementById('predictions');
 		
 });
 
 async function run(){
 
 	try{
-		await load_model();
-		//await load_model_debug();
+		if (findGetParameter("debug") == "true"){
+			await load_model_debug();
+			delete SYSTEM.AEMODEL_PATH;
+		}else{
+			await load_model();
+		}
 		
+		status('Loading model into memory...');
 		await run_demo();
 		
 		document.getElementById('file-container').style.display = '';
@@ -173,6 +181,33 @@ cachedfetch = function(arg) {
     return realfetch(arg, {cache: "force-cache"})
 }
 
+
+async function load_model_cache(model_path){
+
+	var model;
+	var model_cache_path = 'indexeddb://' + model_path;
+	// try to load cache
+	try{
+		model = await tf.loadGraphModel(model_cache_path);
+	}catch(err){
+		console.log("Failed to load cached model from indexeddb (not a big deal)" + err.message);
+		
+		// if cache cannot be loaded then load from the internet
+		model = await tf.loadGraphModel(model_path + "/model.json", fetchFunc=cachedfetch);
+	}
+	// save model for next time
+	try{
+		await model.save(model_cache_path);
+	}catch(err){
+		console.log("Failed to save model to cache " + err.message);
+		console.log(err)
+		// try to clean up the local caches
+		const dbs = await window.indexedDB.databases()
+		dbs.forEach(db => { window.indexedDB.deleteDatabase(db.name) })
+	}
+	return model
+}
+
 let downloadStatus
 async function load_model(){
 	status('Loading model...');
@@ -181,48 +216,38 @@ async function load_model(){
 	const startTime = performance.now();
 	downloadStatus=setInterval(display_size_data,100);
 	window.fetch = cachedfetch
-	
-	try{
-		chesternet = await tf.loadGraphModel('indexeddb://' + MODEL_PATH);
-	}catch{
-		chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json", fetchFunc=cachedfetch);
-		
-	}
-	try{
-		await chesternet.save('indexeddb://' + MODEL_PATH);
-	}catch{
-		// try to clean up the local caches
-		const dbs = await window.indexedDB.databases()
-		dbs.forEach(db => { window.indexedDB.deleteDatabase(db.name) })
-	}
-	
+
+	SYSTEM.chesternet = await load_model_cache(SYSTEM.MODEL_PATH);
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-	if (typeof AEMODEL_PATH !== 'undefined'){
-		aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json", fetchFunc=cachedfetch);
+	
+	
+	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
+		SYSTEM.aechesternet = await load_model_cache(SYSTEM.AEMODEL_PATH);
+		
 		console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
 	}
 	window.fetch = realfetch
 	clearInterval(downloadStatus);
 
-	status('Loading model into memory...');
+	//status('Loading model into memory...');
 
 	await sleep(GUI_WAITTIME)
 
-	//chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
+	//SYSTEM.chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
 	
-	if (typeof AEMODEL_PATH !== 'undefined'){
+/*	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
 		aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
-	}
+	}*/
 	status('');
 };
 
 // this is just to debug the UI without waiting for the real model to load
 async function load_model_debug(){
-	chesternet = {};
-	chesternet.predict = (img) => {
+	SYSTEM.chesternet = {};
+	SYSTEM.chesternet.predict = (img) => {
 		return tf.zeros([1, 18]).add(0.3);
 	};
-	chesternet.execute = (img) => {
+	SYSTEM.chesternet.execute = (img) => {
 		return tf.zeros([1, 18]).add(0.3);
 	};
 }
@@ -230,7 +255,7 @@ async function load_model_debug(){
 
 async function run_demo(){
 	
-	console.log("run_demo");	
+	console.log("run_demo");
 	
 	var imgElement = new Image();
 	imgElement.onload = () => {
@@ -242,7 +267,7 @@ async function run_demo(){
 
 
 //let batched;
-let aebatched;
+//let aebatched;
 let currentpred;
 async function predict(imgElement, isInitialRun, name) {
 
@@ -296,13 +321,13 @@ function prepare_image_resize_crop(imgElement, size){
 	return meanImg
 }
 
-function prepare_image(currentpred, imgElement){
+function prepare_image(thispred, imgElement){
 	
-	currentpred[0].img_original = tf.browser.fromPixels(imgElement).toFloat();
+	thispred[0].img_original = tf.browser.fromPixels(imgElement).toFloat();
 
-	currentpred[0].img_highres = prepare_image_resize_crop(imgElement, Math.max(imgElement.width, imgElement.height));
+	thispred[0].img_highres = prepare_image_resize_crop(imgElement, Math.max(imgElement.width, imgElement.height));
 	
-	currentpred[0].img_input = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
+	thispred[0].img_input = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
 	
 }
 
@@ -313,48 +338,62 @@ async function predict_real(imgElement, isInitialRun, name) {
 	const startTime = performance.now();
 		
 	currentpred = $("#predtemplate").clone();
-	currentpred.find(".loading").each((k,v) => {v.style.display = "block"});
-	currentpred[0].id = name
-	currentpred[0].grads = []; // to cache grads
-	predictionsElement.insertBefore(currentpred[0], predictionsElement.firstChild);
+	var thispred = currentpred
+	thispred.find(".loading").each((k,v) => {v.style.display = "block"});
+	thispred[0].id = name
+	thispred[0].grads = []; // to cache grads
+	SYSTEM.predictionsElement.insertBefore(thispred[0], SYSTEM.predictionsElement.firstChild);
 	
 	$(".btn-reset-layers").click(function(){
 		
-		currentpred.find(".gradimage").hide();
-		reset_grad_btns(currentpred);
+		thispred.find(".gradimage").hide();
+		reset_grad_btns(thispred);
 	})
 	
 	$(".btn-invert-colors").click(function(){
 		
-		if (currentpred.find(".inputimage_highres").css("filter") == "invert(1)"){
-			currentpred.find(".inputimage_highres").css("filter", "invert(0)");
-			$(".btn-invert-colors").removeClass("active");
+		if ($(this).hasClass("active")){
+			thispred.find(".inputimage_highres").css("filter", "invert(0)");
+			$(this).removeClass("active");
 		}else{
-			currentpred.find(".inputimage_highres").css("filter", "invert(1)");
-			$(".btn-invert-colors").addClass("active");
+			thispred.find(".inputimage_highres").css("filter", "invert(1)");
+			$(this).addClass("active");
+		}
+	})
+	
+	$(".btn-raw-gradients").click(function(){
+		
+		if ($(this).hasClass("active")){
+			thispred.find(".gradimage").css("filter", "blur(0.89rem)");
+			//thispred.find(".gradimage").css("animation", "blur2 1.5s ease 0s infinite");
+			$(this).removeClass("active");
+		}else{
+			thispred.find(".gradimage").css("filter", "blur(0rem)");
+			//thispred.find(".gradimage").css("animation", "none");
+			$(this).addClass("active");
 		}
 	})
 
-	//currentpred.find(".inputimage").attr("src", imgElement.src)
-	currentpred.show();
+	//thispred.find(".inputimage").attr("src", imgElement.src)
+	thispred.show();
 
-	currentpred.find(".imagename").text(name)
+	thispred.find(".imagename").text(name)
 	
-	prepare_image(currentpred, imgElement);
+	prepare_image(thispred, imgElement);
 
 	//////// display input image
-	img = currentpred.find(".inputimage_highres")
-	await tf.browser.toPixels(currentpred[0].img_highres.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
-	currentpred.find(".inputimage_highres").show()
-/*	img = currentpred.find(".inputimage")
-	await tf.browser.toPixels(currentpred[0].img_input.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
-	currentpred.find(".inputimage").show()*/
+	img = thispred.find(".inputimage_highres")
+	await tf.browser.toPixels(thispred[0].img_highres.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	thispred.find(".inputimage_highres").show()
+/*	img = thispred.find(".inputimage")
+	await tf.browser.toPixels(thispred[0].img_input.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	thispred.find(".inputimage").show()*/
 	await sleep(GUI_WAITTIME)
 	////////////////////
 
 	console.log("Prepared input image " + Math.floor(performance.now() - startTime) + "ms");
 
-	if (typeof AEMODEL_PATH !== 'undefined'){
+	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
 		
 		//	status('Computing Reconstruction...');
 	
@@ -373,7 +412,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 			//const batched2 = batched.mul(2).sub(1)
 	
-			const rec = aechesternet.predict(aebatched)
+			const rec = SYSTEM.aechesternet.predict(aebatched)
 			console.log(rec);
 	
 			const recErr = aebatched.sub(rec).abs()
@@ -390,11 +429,11 @@ async function predict_real(imgElement, isInitialRun, name) {
 			throw error
 		}
 
-		canvas_a = currentpred.find(".inputimage_rec")[0]
+		canvas_a = thispred.find(".inputimage_rec")[0]
 		layer = recInput.reshape([64,64])
 		await tf.browser.toPixels(layer.div(2).add(0.5),canvas_a);
 	
-		canvas_b = currentpred.find(".recimage")[0]
+		canvas_b = thispred.find(".recimage")[0]
 		layer = rec.reshape([64,64])
 		await tf.browser.toPixels(layer.div(2).add(0.5),canvas_b);
 	
@@ -414,7 +453,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 	
 		//////// display ood image
 	
-		canvas = currentpred.find(".oodimage")[0]
+		canvas = thispred.find(".oodimage")[0]
 		layer = recErr.reshape([64,64])
 		await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
 /*		canvas.style.width = "100%";
@@ -427,16 +466,17 @@ async function predict_real(imgElement, isInitialRun, name) {
 		makeTransparent(d.data)
 		ctx.putImageData(d,0,0);
 	
-		scoreBox = document.createElement("center")
+		/*scoreBox = document.createElement("center")*/
 		score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
-		scoreBox.innerText = score
-		currentpred.find(".oodimagebox")[0].append(scoreBox)
+		thispred.find(".desc").text(score);
+/*		scoreBox.innerText = score
+		thispred.find(".oodimagebox")[0].append(scoreBox)*/
 	
-		//currentpred.find(".oodviz .loading")[0].style.display = "none";
-		currentpred.find(".oodimagebox")[0].style.display = "block";
-		currentpred.find(".oodtoggle")[0].style.display = "block";
+		//thispred.find(".oodviz .loading")[0].style.display = "none";
+		//thispred.find(".oodimagebox")[0].style.display = "block";
+		//thispred.find(".oodtoggle")[0].style.display = "block";
 	
-		currentpred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
+		//thispred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
 	
 	
 		can_predict = ssim.ssim > 0.60
@@ -453,14 +493,14 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 	if (!can_predict){
 
-		showProbError(currentpred.find(".predbox")[0], score)
+		showProbError(thispred.find(".predbox")[0], score)
 		return
 
 	}else{
 		output = tf.tidy(() => {
 
-			const batched = currentpred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
-			return chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
+			const batched = thispred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
+			return SYSTEM.chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
 		});
 		
 		await sleep(GUI_WAITTIME)
@@ -471,16 +511,16 @@ async function predict_real(imgElement, isInitialRun, name) {
 		console.log("logits=" + logits)
 
 
-		currentpred[0].logits = logits;
-		currentpred[0].classes = await distOverClasses(logits);
+		thispred[0].logits = logits;
+		thispred[0].classes = await distOverClasses(logits);
 		
-		showProbResults(currentpred)//, logits, recScore)
-		currentpred.find(".predviz .loading").hide();
-		currentpred.find(".loading").hide();
-		//currentpred.find(".computegrads").show();
+		showProbResults(thispred)//, logits, recScore)
+		thispred.find(".predviz .loading").hide();
+		thispred.find(".loading").hide();
+		//thispred.find(".computegrads").show();
 
 
-		currentpred.find(".oodtoggle").hide();
+		thispred.find(".oodtoggle").hide();
 		console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
 	}
 
@@ -535,21 +575,19 @@ async function computeGrads(thispred, idx, explainElement){
 
 async function computeGrads_real(thispred, idx){
 
-	//batched = thispred[0].batched
 	thispred.find(".viewbox .loading").show();
-	//await sleep(1000)
+	thispred.find(".gradimage").hide()
 
 	//cache computation
 	if (thispred[0].grads[idx] == undefined){
 		await sleep(GUI_WAITTIME)
 	
-		//saveasdasd = await chestgrad.save('indexeddb://' + MODEL_PATH + "-chestgrad");
+		//saveasdasd = await chestgrad.save('indexeddb://' + SYSTEM.MODEL_PATH + "-chestgrad");
+		//chestgrad = await tf.loadGraphModel('indexeddb://' + SYSTEM.MODEL_PATH + "-chestgrad");
 		
-		//chestgrad = await tf.loadGraphModel('indexeddb://' + MODEL_PATH + "-chestgrad");
-	
 		layer = tf.tidy(() => {
 	
-			chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
+			chestgrad = tf.grad(x => SYSTEM.chesternet.predict(x).reshape([-1]).gather(idx))
 			
 			const batched = thispred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
 			const grad = chestgrad(batched);
@@ -562,7 +600,9 @@ async function computeGrads_real(thispred, idx){
 		//////// display grad image
 		canvas = thispred.find(".gradimage")[0]
 		await tf.browser.toPixels(layer,canvas);	
-	
+		
+		await sleep(GUI_WAITTIME)
+		
 	    ctx = canvas.getContext("2d");
 		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
 		makeColor(d.data);
@@ -742,10 +782,10 @@ function showProbErrorColor(predictionContainer) {
 			predictionContainer.appendChild(row);
 }
 
-function showProbResults(currentpred) {
+function showProbResults(thispred) {
 
-	classes = currentpred[0].classes
-	predictionContainer = currentpred.find(".predbox")[0]
+	classes = thispred[0].classes
+	predictionContainer = thispred.find(".predbox")[0]
 
 	const probsContainer = document.createElement('div');
 	probsContainer.style.width="100%";
@@ -766,10 +806,11 @@ function showProbResults(currentpred) {
 			classElement.innerText = classes[i].className;
 			if (classes[i].probability > 0.6){
 				classElement.style.fontWeight = "900";
+				classElement.className = 'cell active';
 			}
 			classElement.style.fontSize="small";
 			classElement.style.whiteSpace="nowrap";
-			classElement.style.overflowX="scroll";
+			classElement.style.overflowX="hidden";
 			classElement.style.maxWidth="150px";
 			probsElement.className = 'cell gradient';
 			probsElement.style.borderBottomStyle="solid";
@@ -784,7 +825,7 @@ function showProbResults(currentpred) {
 		}else{
 			explainElement.className = 'explain-btn btn btn-info';
 			explainElement.innerText = "explain";
-			$(explainElement).click(function(){computeGrads(currentpred,i,explainElement)})	    	
+			$(explainElement).click(function(){computeGrads(thispred,i,explainElement)})	    	
 		}
 		row.appendChild(explainElement);
 
@@ -826,7 +867,7 @@ function showProbResults(currentpred) {
 //			target.className="glyphicon glyphicon-menu-right"
 //			target.style.marginLeft="-7px"; //glyh is 14x14
 //			target.style.position="absolute";
-//			target.style.left=parseInt(currentpred[0].PPV80[i].probability*100) + "%";
+//			target.style.left=parseInt(thispred[0].PPV80[i].probability*100) + "%";
 //			target.style.fontWeight="900";
 //			probsElement.appendChild(target)
 
@@ -835,7 +876,7 @@ function showProbResults(currentpred) {
 //			target.className="glyphicon glyphicon-menu-left"
 //			target.style.marginLeft="-7px"; //glyh is 14x14
 //			target.style.position="absolute";
-//			target.style.left=parseInt(currentpred[0].NPV95[i].probability*100) + "%";
+//			target.style.left=parseInt(thispred[0].NPV95[i].probability*100) + "%";
 //			target.style.fontWeight="900";
 //			probsElement.appendChild(target)
 		}
@@ -942,8 +983,8 @@ async function showResults(imgElement, layers, classes, recScore) {
 	}
 
 	predictionContainer.appendChild(probsContainer);
-	predictionsElement.insertBefore(document.createElement('hr'), predictionsElement.firstChild);
-	predictionsElement.insertBefore(predictionContainer, predictionsElement.firstChild);
+	SYSTEM.predictionsElement.insertBefore(document.createElement('hr'), SYSTEM.predictionsElement.firstChild);
+	SYSTEM.predictionsElement.insertBefore(predictionContainer, SYSTEM.predictionsElement.firstChild);
 
 }
 
