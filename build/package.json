@@ -1,14 +1,14 @@
 {
-  "name": "hash",
+  "name": "Chester",
   "version": "1.0.0",
-  "description": "See the various hash values of entered text",
-  "repository": "electron/simple-samples",
+  "description": "Chester",
+  "repository": "mlmed/chester-xray",
   "main": "app.js",
   "scripts": {
     "start": "electron app.js"
   },
   "license": "ISC",
   "devDependencies": {
-    "electron": "^3.0.2"
+    "electron": "^9.1.3"
   }
 }
