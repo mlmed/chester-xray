@@ -1,10 +1,10 @@
 <html>
 <head>
 
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
-	<script async src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script src="res/jquery-3.5.1.min.js"></script>
+	<link rel="stylesheet" href="res/bootstrap-3.3.7.min.css">
+	<link rel="stylesheet" href="res/bootstrap-theme-3.3.7.min.css">
+	<script async src="res/bootstrap-3.3.7.min.js"></script>
 	
 	<link rel="stylesheet" href="res/magnify.css">
 	<script async src="res/magnify.js"></script>
@@ -40,7 +40,6 @@
 <script src="res/tf-2.0.1.min.js"></script>
 <script src="res/ssim.js"></script>
 <script src="res/js-colormaps.js"></script>
-<script src="res/jquery.sparkline.min.js"></script>
 
 
 <link rel='stylesheet' href='style.css' type='text/css' media='all' />
@@ -146,7 +145,7 @@ function getCookie(cname) {
 			</p>
 			
 			<ol>
-			<li>Let people play with deep learning tools to know how they work and their limitations.</li>
+			<li>Demonstrate how AI systems work and their limitations.</li>
 			<li>Show the potential of open data (needed to build a public system like this).</li>
 			<li>Create a tool to help teach radiology.</li>
 			<li>Demonstrate a model delivery system that can scale to provide free medical tools to the world.</li>
@@ -156,27 +155,14 @@ function getCookie(cname) {
 		<iframe style='padding-bottom: 15px;max-width:700px' width="100%" height="470" src='//www.youtube.com/embed/IbkxHKXjaQo?html5=1&showinfo=0&rel=0&autohide=1&theme=light&color=white&hd=1' frameborder='0' allowfullscreen></iframe>
 		</center>
 
-         
-        The system contains three main components: <br>
+
+		<h3>Publications:</h3>      
+        <ul>
+        <li>Chester: A Web Delivered Locally Computed Chest X-Ray Disease Prediction System, Joseph Paul Cohen and Paul Bertin and Vincent Frappier, arxiv, <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a>
+     	<li>On the limits of cross-domain generalization in automated X-ray prediction, Joseph Paul Cohen and Mohammad Hashir and Rupert Brooks and Hadrien Bertrand, Medical Imaging with Deep Learning, <a href="https://arxiv.org/abs/2002.02497">https://arxiv.org/abs/2002.02497</a>
+        <li>A Benchmark of Medical Out of Distribution Detection, Tianshi Cao and Chinwei Huang and David Yu-Tung Hui and Joseph Paul Cohen, arxiv, <a href="https://arxiv.org/abs/2007.04250">https://arxiv.org/abs/2007.04250</a>
+		</ul>
         
-        <b>Out Of Distribution error:</b>
-        This is a heatmap showing how the image differs from our training data. 
-        If the heatmap is too bright then the image is very different from our training data and the model will likely not work.
-        We will prevent an image from being processed if it is not similar enough to our training data in order to prevent errors in predictions.
-        <br>
-        
-        <b>Predictive image regions: </b>
-        The brighter each pixel is in the heatmap the more influence it can have on the predictions. 
-        If the color is bright it means that a change in these pixels will change the prediction. 
-        <br>
-        
-        <b>Disease Predictions:</b>
-        A probability indicating how likely the image contains the disease. 50% means the network is not sure. 
-        <br>
-        <br>
-        <b>Technical Report:</b> <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a>
-        
-     	
         
         
         <center><a href="javascript:hideAbout();"><button type="button" class="btn btn-warning">hide this</button></a></center>
@@ -211,7 +197,7 @@ function getCookie(cname) {
 	</div>
 				
 	By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
-	<span class="hideiflocal">New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br></span>
+	<span class="hideiflocal">Download the offline version <a href="https://github.com/mlmed/chester-xray/releases/download/3.0/Chester.app.zip">here</a> for Mac OSX<br></span>
 	
 	</div>
 
