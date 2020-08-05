@@ -69,10 +69,15 @@ const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 const GUI_WAITTIME = 30;
 
-SYSTEM.MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/xrv-all-45rot15trans15scale';
-//SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
-SYSTEM.AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
-//SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+if (findGetParameter("local") == "true"){
+    hideAbout();
+    $(".hideiflocal").hide()
+    SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+    SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+}else{
+    SYSTEM.MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/xrv-all-45rot15trans15scale';
+    SYSTEM.AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+}
 
 /*let chesternet;
 let aechesternet;
@@ -84,6 +89,11 @@ let catElement;*/
 
 $(function(){
 
+    if (findGetParameter("local") == "true"){
+        hideAbout();
+        $(".hideiflocal").hide()
+    }
+    
 	if (findGetParameter("randomorder") == "true"){
 		$("#info").text($("#info").text() + " In random order mode");
 	}

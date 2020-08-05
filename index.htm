@@ -17,7 +17,7 @@
 <meta property="og:image" content="https://mlmed.org/tools/xray/res/share.png" />
 <meta property="og:title" content="Chester the AI Radiology Assistant" />
 
-<meta name="twitter:card" content="summary"></meta>
+<meta name="twitter:card" content="summary"/>
 <meta property="og:url" content="https://mlmed.org/tools/xray/" />
 <meta property="og:title" content="Chester the AI Radiology Assistant" />
 <meta property="og:description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation." />
@@ -63,7 +63,7 @@ function hideAbout(){
 
 $(function(){
 	
-	if (getCookie("about") != "about"){
+	if (findGetParameter("local") != "true" && getCookie("about") != "about"){
 		showAbout();
 	}
 	
@@ -195,8 +195,8 @@ function getCookie(cname) {
 			NOT FOR MEDICAL USE. This is a prototype system for diagnosing
 			chest x-rays using neural networks. All processing is done on your
 			device and images are not sent to the server. If you continue you
-			assume all liability when using the system. A neural network model
-			(~150mb) will be downloaded to your browser.
+			assume all liability when using the system. <span class="hideiflocal">A neural network model
+            (~150mb) will be downloaded to your browser.</span>
 			<button id="agree" type="button" class="btn btn-danger">Accept NOT FOR MEDICAL USE</button>
 		</center>
 	</div>
@@ -211,7 +211,7 @@ function getCookie(cname) {
 	</div>
 				
 	By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
-	New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br>
+	<span class="hideiflocal">New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br></span>
 	
 	</div>
 
@@ -359,15 +359,15 @@ function testBrowser(){
   </tr>
   <tr>
     <td class="tg-0lax">Version</td>
-    <td class="tg-0lax">3.0 (Old versions: <a href="/tools/xray-v2">v2</a>, <a href="/tools/xray-v1">v1</a>)</td>
+    <td class="tg-0lax">3.0  <span class="hideiflocal">(Old versions: <a href="/tools/xray-v2">v2</a>, <a href="/tools/xray-v1">v1</a>)</span></td>
   </tr>
   <tr>
     <td class="tg-0lax">Prediction Model</td>
-    <td class="tg-0lax">DenseNet-121 (Input 224x224) xrv-all-45rot15trans15scale (TorchXRayVision) <br>Paper: <a href="https://arxiv.org/abs/2002.02497">https://arxiv.org/abs/2002.02497</a></td>
+    <td class="tg-0lax">DenseNet-121 (Input 224x224) xrv-all-45rot15trans15scale (TorchXRayVision) <br>Paper: <a href="https://arxiv.org/abs/2002.02497" target="_blank">https://arxiv.org/abs/2002.02497</a></td>
   </tr>
   <tr>
     <td class="tg-0lax">Out of Distribtion Model</td>
-    <td class="tg-0lax">Autoencoder (Input 64x64) ae-chest-savedmodel-64-512 <br> Paper: <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a></td>
+    <td class="tg-0lax">Autoencoder (Input 64x64) ae-chest-savedmodel-64-512 <br> Paper: <a href="https://arxiv.org/abs/1901.11210" target="_blank">https://arxiv.org/abs/1901.11210</a></td>
   </tr>
   <tr>
     <td class="tg-0lax">Training data</td>
@@ -381,7 +381,7 @@ function testBrowser(){
 
 </center>
 
-<a href="https://github.com/mlmed/dl-web-xray/issues" id="chat-link" target="_blank"><i class="glyphicon glyphicon-envelope"></i>Send Feedback</a>
+<a class="hideiflocal" href="https://github.com/mlmed/chester-xray/issues" id="chat-link" target="_blank"><i class="glyphicon glyphicon-envelope"></i>Send Feedback</a>
 
 
 </html>
