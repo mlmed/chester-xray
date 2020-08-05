@@ -69,10 +69,10 @@ const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
 const GUI_WAITTIME = 30;
 
-//const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
-SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
-//const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
-SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+SYSTEM.MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/xrv-all-45rot15trans15scale';
+//SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+SYSTEM.AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+//SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
 /*let chesternet;
 let aechesternet;
