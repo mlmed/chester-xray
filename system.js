@@ -63,21 +63,23 @@ function display_size_data(){
 	status('Loading model... ' + total + "/" + (8+16) + "  " + prog);
 }
 
+let SYSTEM = {};
+
 const RECSCORE_THRESH = 0.5;
 const OODSCORE_THRESH = 1000;
+const GUI_WAITTIME = 30;
 
-//const MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/chestxnet-45rot15trans15scale4byte';
-const MODEL_PATH = './models/xrv-all-45rot15trans15scale';
-//const AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
-const AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
+SYSTEM.MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/xrv-all-45rot15trans15scale';
+//SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+SYSTEM.AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+//SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 
-let chesternet;
+/*let chesternet;
 let aechesternet;
-let catElement;
-let grad_fns;
-let img;
-let filesElement; 
-let predictionsElement;
+let catElement;*/
+/*let filesElement; */
+/*let predictionsElement;*/
+
 //let MODEL_CONFIG;
 
 $(function(){
@@ -87,7 +89,7 @@ $(function(){
 	}
 
 	$.ajax({
-		url: MODEL_PATH + "/config.json",
+		url: SYSTEM.MODEL_PATH + "/config.json",
 		dataType: "json",
 		async:false,
 		cache:false,
@@ -101,8 +103,8 @@ $(function(){
 	});
 
 
-	filesElement = document.getElementById('files');
-	filesElement.addEventListener('change', async evt => {
+	SYSTEM.filesElement = document.getElementById('files');
+	SYSTEM.filesElement.addEventListener('change', async evt => {
 		let files = evt.target.files;
 
 		idxs = [...Array(files.length).keys()]
@@ -119,7 +121,7 @@ $(function(){
 			}
 
 			let reader = new FileReader();
-			const idx = i;
+			//const idx = i;
 
 			var deferred = $.Deferred();
 
@@ -141,13 +143,25 @@ $(function(){
 		$("#files").val("");
 	});
 
-	predictionsElement = document.getElementById('predictions');
+	SYSTEM.predictionsElement = document.getElementById('predictions');
+		
 });
 
 async function run(){
 
 	try{
-		await run_real()
+		if (findGetParameter("debug") == "true"){
+			await load_model_debug();
+			delete SYSTEM.AEMODEL_PATH;
+		}else{
+			await load_model();
+		}
+		
+		status('Loading model into memory...');
+		await run_demo();
+		
+		document.getElementById('file-container').style.display = '';
+		
 	}catch(err) {
 		clearInterval(downloadStatus);
 		$(".loading").hide()
@@ -167,42 +181,93 @@ cachedfetch = function(arg) {
     return realfetch(arg, {cache: "force-cache"})
 }
 
+
+async function load_model_cache(model_path){
+
+	var model;
+	var model_cache_path = 'indexeddb://' + model_path;
+	// try to load cache
+	try{
+		model = await tf.loadGraphModel(model_cache_path);
+	}catch(err){
+		console.log("Failed to load cached model from indexeddb (not a big deal)" + err.message);
+		
+		// if cache cannot be loaded then load from the internet
+		model = await tf.loadGraphModel(model_path + "/model.json", fetchFunc=cachedfetch);
+	}
+	// save model for next time
+	try{
+		await model.save(model_cache_path);
+	}catch(err){
+		console.log("Failed to save model to cache " + err.message);
+		console.log(err)
+		// try to clean up the local caches
+		const dbs = await window.indexedDB.databases()
+		dbs.forEach(db => { window.indexedDB.deleteDatabase(db.name) })
+	}
+	return model
+}
+
 let downloadStatus
-async function run_real(){
+async function load_model(){
 	status('Loading model...');
+	console.log("load_model");
+	
 	const startTime = performance.now();
 	downloadStatus=setInterval(display_size_data,100);
 	window.fetch = cachedfetch
-	chesternet = await tf.loadGraphModel(MODEL_PATH + "/model.json", fetchFunc=cachedfetch);
+
+	SYSTEM.chesternet = await load_model_cache(SYSTEM.MODEL_PATH);
 	console.log("First Model loaded " + Math.floor(performance.now() - startTime) + "ms");
-	aechesternet = await tf.loadGraphModel(AEMODEL_PATH + "/model.json", fetchFunc=cachedfetch);
-	console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
+	
+	
+	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
+		SYSTEM.aechesternet = await load_model_cache(SYSTEM.AEMODEL_PATH);
+		
+		console.log("Second Model loaded " + Math.floor(performance.now() - startTime) + "ms");
+	}
 	window.fetch = realfetch
 	clearInterval(downloadStatus);
 
-	status('Loading model into memory...');
+	//status('Loading model into memory...');
 
-	await sleep(100)
+	await sleep(GUI_WAITTIME)
 
-	chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
-	aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
+	//SYSTEM.chesternet.predict(tf.zeros([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])).dispose();
+	
+/*	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
+		aechesternet.predict(tf.zeros([1, 1, 64, 64])).dispose();
+	}*/
 	status('');
-
-	catElement = document.getElementById('cat');
-
-	if (catElement.complete && catElement.naturalHeight !== 0) {
-		predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
-	} else {
-		catElement.onload = () => {
-			predict(catElement, true, "Example Image (" + catElement.src.substring(catElement.src.lastIndexOf('/')+1)+ ")");
-		};
-	}
-
-	document.getElementById('file-container').style.display = '';
 };
 
-let batched;
-let aebatched;
+// this is just to debug the UI without waiting for the real model to load
+async function load_model_debug(){
+	SYSTEM.chesternet = {};
+	SYSTEM.chesternet.predict = (img) => {
+		return tf.zeros([1, 18]).add(0.3);
+	};
+	SYSTEM.chesternet.execute = (img) => {
+		return tf.zeros([1, 18]).add(0.3);
+	};
+}
+	
+
+async function run_demo(){
+	
+	console.log("run_demo");
+	
+	var imgElement = new Image();
+	imgElement.onload = () => {
+		predict(imgElement, true, "Example Image (" + imgElement.src.substring(imgElement.src.lastIndexOf('/')+1)+ ")");
+		};
+	imgElement.src = "examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg";	
+	
+}
+
+
+//let batched;
+//let aebatched;
 let currentpred;
 async function predict(imgElement, isInitialRun, name) {
 
@@ -228,247 +293,268 @@ async function predict(imgElement, isInitialRun, name) {
 	}
 	$("#file-container #files").attr("disabled", false)
 }
+
+function prepare_image_resize_crop(imgElement, size){
+	
+	orig_width = imgElement.width
+	orig_height = imgElement.height
+	if (orig_width < orig_height){
+		imgElement.width = size
+		imgElement.height = Math.floor(size*orig_height/orig_width)
+	}else{
+		imgElement.height = size
+		imgElement.width = Math.floor(size*orig_width/orig_height)
+	}
+	
+	console.log("img wxh: " + orig_width + ", " + orig_height + " => " + imgElement.width + ", " + imgElement.height)	
+	
+	img = tf.browser.fromPixels(imgElement).toFloat();
+	
+	hOffset = Math.floor(img.shape[1]/2 - size/2)
+	wOffset = Math.floor(img.shape[0]/2 - size/2)
+	
+	img_cropped = img.slice([wOffset,hOffset],[size,size])
+	
+	img_normalized = img_cropped.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
+	meanImg = img_normalized.mean(2);
+	
+	return meanImg
+}
+
+function prepare_image(thispred, imgElement){
+	
+	thispred[0].img_original = tf.browser.fromPixels(imgElement).toFloat();
+
+	thispred[0].img_highres = prepare_image_resize_crop(imgElement, Math.max(imgElement.width, imgElement.height));
+	
+	thispred[0].img_input = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
+	
+}
+
 async function predict_real(imgElement, isInitialRun, name) {
 	status('Predicting...');
-
+	console.log("predict_real");
+	
 	const startTime = performance.now();
-	w = imgElement.width
-	h = imgElement.height
-	if (w < h){
-		imgElement.width = MODEL_CONFIG.IMAGE_SIZE
-		imgElement.height = Math.floor(MODEL_CONFIG.IMAGE_SIZE*h/w)
-	}else{
-		imgElement.height = MODEL_CONFIG.IMAGE_SIZE
-		imgElement.width = Math.floor(MODEL_CONFIG.IMAGE_SIZE*w/h)
-	}
-
-
-	console.log("img wxh: " + w + ", " + h + " => " + imgElement.width + ", " + imgElement.height)
-
+		
 	currentpred = $("#predtemplate").clone();
-	currentpred.find(".loading").each((k,v) => {v.style.display = "block"});
-	currentpred[0].id = name
-	predictionsElement.insertBefore(currentpred[0], predictionsElement.firstChild);
+	var thispred = currentpred
+	thispred.find(".loading").each((k,v) => {v.style.display = "block"});
+	thispred[0].id = name
+	thispred[0].grads = []; // to cache grads
+	SYSTEM.predictionsElement.insertBefore(thispred[0], SYSTEM.predictionsElement.firstChild);
+	
+	$(".btn-reset-layers").click(function(){
+		
+		thispred.find(".gradimage").hide();
+		reset_grad_btns(thispred);
+	})
+	
+	$(".btn-invert-colors").click(function(){
+		
+		if ($(this).hasClass("active")){
+			thispred.find(".inputimage_highres").css("filter", "invert(0)");
+			$(this).removeClass("active");
+		}else{
+			thispred.find(".inputimage_highres").css("filter", "invert(1)");
+			$(this).addClass("active");
+		}
+	})
+	
+	$(".btn-raw-gradients").click(function(){
+		
+		if ($(this).hasClass("active")){
+			thispred.find(".gradimage").css("filter", "blur(0.89rem)");
+			//thispred.find(".gradimage").css("animation", "blur2 1.5s ease 0s infinite");
+			$(this).removeClass("active");
+		}else{
+			thispred.find(".gradimage").css("filter", "blur(0rem)");
+			//thispred.find(".gradimage").css("animation", "none");
+			$(this).addClass("active");
+		}
+	})
 
-	//currentpred.find(".inputimage").attr("src", imgElement.src)
-	currentpred[0].style.display="block";
+	//thispred.find(".inputimage").attr("src", imgElement.src)
+	thispred.show();
 
-	currentpred.find(".imagename").text(name)
-
-	img = tf.browser.fromPixels(imgElement).toFloat();
-
-	normalized = img.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
-
-	meanImg = normalized.mean(2)
-	hOffset = Math.floor(img.shape[1]/2 - MODEL_CONFIG.IMAGE_SIZE/2)
-	wOffset = Math.floor(img.shape[0]/2 - MODEL_CONFIG.IMAGE_SIZE/2)
-
-	cropImg = meanImg.slice([wOffset,hOffset],[MODEL_CONFIG.IMAGE_SIZE,MODEL_CONFIG.IMAGE_SIZE])
+	thispred.find(".imagename").text(name)
+	
+	prepare_image(thispred, imgElement);
 
 	//////// display input image
-	imgs = currentpred.find(".inputimage")
-	for (i=0; i < imgs.length; i++){
-		canvas = imgs[i]
-
-		await tf.browser.toPixels(cropImg.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),canvas);	
-		canvas.style.width = "100%";
-		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";
-	}
+	img = thispred.find(".inputimage_highres")
+	await tf.browser.toPixels(thispred[0].img_highres.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	thispred.find(".inputimage_highres").show()
+/*	img = thispred.find(".inputimage")
+	await tf.browser.toPixels(thispred[0].img_input.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	thispred.find(".inputimage").show()*/
+	await sleep(GUI_WAITTIME)
 	////////////////////
-
-	batched = cropImg.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])//.tile([1,3,1,1])
-	currentpred[0].batched = batched
 
 	console.log("Prepared input image " + Math.floor(performance.now() - startTime) + "ms");
 
+	if (typeof SYSTEM.AEMODEL_PATH !== 'undefined'){
+		
+		//	status('Computing Reconstruction...');
+	
+		img_small = document.createElement('img');
+		img_small.src = imgElement.src
+		img_small.width = 64
+		img_small.height = 64
+		
+		let {recInput, recErr, rec} = tf.tidy(() => {
+	
+			const img = tf.browser.fromPixels(img_small).toFloat();
+	
+			const normalized = img.div(tf.scalar(255));
+	
+			aebatched = normalized.mean(2).reshape([1, 1, 64, 64])
+	
+			//const batched2 = batched.mul(2).sub(1)
+	
+			const rec = SYSTEM.aechesternet.predict(aebatched)
+			console.log(rec);
+	
+			const recErr = aebatched.sub(rec).abs()
+	
+			return {recInput:aebatched, recErr: recErr, rec: rec};
+		});
+	
+		recScore = recErr.mean().dataSync()
+		console.log("recScore" + recScore);
+		console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+		if (isInitialRun && (recScore > 0.27 || recScore < 0.01)){
+			error = new Error("Something wrong with this browser. Try refreshing the page. (" + recScore + ")");
+			error.name="BadBrowser"
+			throw error
+		}
 
-//	status('Computing Reconstruction...');
-
-	img_small = document.createElement('img');
-	img_small.src = imgElement.src
-	img_small.width = 64
-	img_small.height = 64
-
-	let {recInput, recErr, rec} = tf.tidy(() => {
-
-		const img = tf.browser.fromPixels(img_small).toFloat();
-
-		const normalized = img.div(tf.scalar(255));
-
-		aebatched = normalized.mean(2).reshape([1, 1, 64, 64])
-
-		//const batched2 = batched.mul(2).sub(1)
-
-		const rec = aechesternet.predict(aebatched)
-		console.log(rec);
-
-		const recErr = aebatched.sub(rec).abs()
-
-		return {recInput:aebatched, recErr: recErr, rec: rec};
-	});
-
-
-
-	recScore = recErr.mean().dataSync()
-	console.log("recScore" + recScore);
-	console.log("Computed Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
-	if (isInitialRun && (recScore > 0.27 || recScore < 0.01)){
-		error = new Error("Something wrong with this browser. Try refreshing the page. (" + recScore + ")");
-		error.name="BadBrowser"
-		throw error
+		canvas_a = thispred.find(".inputimage_rec")[0]
+		layer = recInput.reshape([64,64])
+		await tf.browser.toPixels(layer.div(2).add(0.5),canvas_a);
+	
+		canvas_b = thispred.find(".recimage")[0]
+		layer = rec.reshape([64,64])
+		await tf.browser.toPixels(layer.div(2).add(0.5),canvas_b);
+	
+		console.log("Wrote images " + Math.floor(performance.now() - startTime) + "ms");
+	
+		// compute ssim
+		canvas = canvas_a
+		a = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+		canvas = canvas_b
+		b = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
+	
+		// https://github.com/darosh/image-ssim-js
+		ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
+		console.log("ssim " + JSON.stringify(ssim));
+	
+		console.log("Computed SSIM " + Math.floor(performance.now() - startTime) + "ms");
+	
+		//////// display ood image
+	
+		canvas = thispred.find(".oodimage")[0]
+		layer = recErr.reshape([64,64])
+		await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
+/*		canvas.style.width = "100%";
+		canvas.style.height = "";
+		canvas.style.imageRendering = "pixelated";*/
+	
+		ctx = canvas.getContext("2d");
+		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+		makeColor(d.data);
+		makeTransparent(d.data)
+		ctx.putImageData(d,0,0);
+	
+		/*scoreBox = document.createElement("center")*/
+		score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
+		thispred.find(".desc").text(score);
+/*		scoreBox.innerText = score
+		thispred.find(".oodimagebox")[0].append(scoreBox)*/
+	
+		//thispred.find(".oodviz .loading")[0].style.display = "none";
+		//thispred.find(".oodimagebox")[0].style.display = "block";
+		//thispred.find(".oodtoggle")[0].style.display = "block";
+	
+		//thispred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
+	
+	
+		can_predict = ssim.ssim > 0.60
+		
+		//	////////////////////
+	
+		console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
+	}else{
+		recScore = 0.01;
+		can_predict = true;
 	}
-
-
-	canvas_a = currentpred.find(".inputimage_rec")[0]
-	layer = recInput.reshape([64,64])
-	await tf.browser.toPixels(layer.div(2).add(0.5),canvas_a);
-
-	canvas_b = currentpred.find(".recimage")[0]
-	layer = rec.reshape([64,64])
-	await tf.browser.toPixels(layer.div(2).add(0.5),canvas_b);
-
-	console.log("Wrote images " + Math.floor(performance.now() - startTime) + "ms");
-
-	// compute ssim
-	canvas = canvas_a
-	a = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
-	canvas = canvas_b
-	b = {width: canvas.width, height: canvas.height, data: canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height).data, channels: 4, canvas: canvas}
-
-	// https://github.com/darosh/image-ssim-js
-	ssim = ImageSSIM.compare(a, b, 8, 0.01, 0.03, 8)
-	console.log("ssim " + JSON.stringify(ssim));
-
-	console.log("Computed SSIM " + Math.floor(performance.now() - startTime) + "ms");
-
-	//////// display ood image
-
-	canvas = currentpred.find(".oodimage")[0]
-	layer = recErr.reshape([64,64])
-	await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
-	canvas.style.width = "100%";
-	canvas.style.height = "";
-	canvas.style.imageRendering = "pixelated";
-
-	ctx = canvas.getContext("2d");
-	d = ctx.getImageData(0, 0, canvas.width, canvas.height);
-	makeColor(d.data);
-	makeTransparent(d.data)
-	ctx.putImageData(d,0,0);
-
-	scoreBox = document.createElement("center")
-	score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
-	scoreBox.innerText = score
-	currentpred.find(".oodimagebox")[0].append(scoreBox)
-
-	currentpred.find(".oodviz .loading")[0].style.display = "none";
-	currentpred.find(".oodimagebox")[0].style.display = "block";
-	currentpred.find(".oodtoggle")[0].style.display = "block";
-
-	currentpred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
-
-//	////////////////////
-
-	console.log("Plotted Reconstruction " + Math.floor(performance.now() - startTime) + "ms");
-
-
-	// zoom does not work yet
-//	var main = currentpred.find(".inputimage")[0]
-//	var zoom = document.getElementById("zoom");
-//	var ctx = main.getContext("2d")
-//	var zoomCtx = zoom.getContext("2d");
-
-//	main.addEventListener("mousemove", function(e){
-//	console.log(e);
-//	zoomCtx.fillStyle = "white";
-//	zoomCtx.fillRect(0,0, zoom.width, zoom.height);
-//	zoomCtx.drawImage(main, (e.x-$(main).offset().left)/2, e.y-$(main).offset().top, 100, 50, 0,0, 400, 200);
-//	zoom.style.top = e.pageY + 10 + "px"
-//	zoom.style.left = e.pageX + 10 + "px"
-//	zoom.style.display = "block";
-//	});
-
-//	main.addEventListener("mouseout", function(){
-//	zoom.style.display = "none";
-//	});
-
-
-//	m = img.mean(2);
-//	oodscore = 
-//	img.slice([0,0,0],[-1,-1,1]).sub(m.expandDims(2)).abs().sum().add(
-//	img.slice([0,0,1],[-1,-1,1]).sub(m.expandDims(2)).abs().sum()).add( 
-//	img.slice([0,0,2],[-1,-1,1]).sub(m.expandDims(2)).abs().sum()).dataSync();
-//	console.log("oodscore " + oodscore);
-//	else if (oodscore > OODSCORE_THRESH){
-
-//	showProbErrorColor(currentpred.find(".predbox")[0], recScore)
-//	return
-
-
-//	recScore = 0.01
-
-
+	
 	status('Predicting disease...');
-	await sleep(100)
-
-	can_predict = ssim.ssim > 0.60
 
 	if (!can_predict){
 
-
-		showProbError(currentpred.find(".predbox")[0], score)
+		showProbError(thispred.find(".predbox")[0], score)
 		return
-
 
 	}else{
 		output = tf.tidy(() => {
 
-			return chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
+			const batched = thispred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
+			return SYSTEM.chesternet.execute(batched, [MODEL_CONFIG.OUTPUT_NODE])
 		});
-
+		
+		await sleep(GUI_WAITTIME)
+		
 		logits = await output.data()
 
 		console.log("Computed logits and grad " + Math.floor(performance.now() - startTime) + "ms");
 		console.log("logits=" + logits)
 
 
-		currentpred[0].logits = logits
-		currentpred[0].classes = await distOverClasses(logits)
-/*		currentpred[0].PPV80 = await distOverClasses(MODEL_CONFIG.PPV80_POINT)
-		currentpred[0].NPV80 = await distOverClasses(MODEL_CONFIG.NPV80_POINT)*/
-
-		currentpred[0].grads = [] // to cache grads
+		thispred[0].logits = logits;
+		thispred[0].classes = await distOverClasses(logits);
 		
-		showProbResults(currentpred)//, logits, recScore)
-		currentpred.find(".predviz .loading")[0].style.display = "none";
+		showProbResults(thispred)//, logits, recScore)
+		thispred.find(".predviz .loading").hide();
+		thispred.find(".loading").hide();
+		//thispred.find(".computegrads").show();
 
 
-		currentpred.find(".gradviz .loading").hide()
-		if (can_predict){
-			currentpred.find(".gradviz .computegrads").show()
-
-//			currentpred.find(".gradviz .computegrads").click(function(){
-//			thispred = $(this).closest(".prediction")
-//			thispred.find(".gradviz .computegrads").hide()
-//			computeGrads(thispred, batched, [10]);
-//			});
-		}
-
-		currentpred.find(".oodtoggle").hide()
+		thispred.find(".oodtoggle").hide();
 		console.log("results plotted " + Math.floor(performance.now() - startTime) + "ms");
 	}
 
 }
 
-async function computeGrads(thispred, idx){
+function reset_grad_btns(thispred){
+	
+	thispred.find(".explain-btn").removeClass("active");
+	thispred.find(".explain-btn").removeClass("btn-primary");
+	thispred.find(".explain-btn").addClass("btn-info");
+}
+
+async function computeGrads(thispred, idx, explainElement){
 
 	try{
 		status('Computing gradients...' + idx + " " + MODEL_CONFIG.LABELS[idx]);
 
-		thispred.find(".gradviz .computegrads").hide();
-		thispred.find(".gradimagebox").hide();
-		thispred.find(".gradviz .desc").text("");
+		//thispred.find(".computegrads").hide();
+		//thispred.find(".gradimagebox").hide();
+		if ($(explainElement).hasClass("active")){
+			$(explainElement).addClass("btn-info");
+			$(explainElement).removeClass("btn-primary");
+			$(explainElement).removeClass("active");
+			thispred.find(".gradimage").hide();
+			return
+		}else{
+			reset_grad_btns(thispred);
+			
+			$(explainElement).removeClass("btn-info");
+			$(explainElement).addClass("btn-primary");
+			$(explainElement).addClass("active");
+		}
+
+		thispred.find(".desc").text("");
 
 		$("#file-container #files").attr("disabled", true)
 
@@ -489,16 +575,21 @@ async function computeGrads(thispred, idx){
 
 async function computeGrads_real(thispred, idx){
 
-	batched = thispred[0].batched
-	thispred.find(".gradviz .loading")[0].style.display = "block";
+	thispred.find(".viewbox .loading").show();
+	thispred.find(".gradimage").hide()
 
 	//cache computation
 	if (thispred[0].grads[idx] == undefined){
-		await sleep(100)
+		await sleep(GUI_WAITTIME)
 	
+		//saveasdasd = await chestgrad.save('indexeddb://' + SYSTEM.MODEL_PATH + "-chestgrad");
+		//chestgrad = await tf.loadGraphModel('indexeddb://' + SYSTEM.MODEL_PATH + "-chestgrad");
+		
 		layer = tf.tidy(() => {
 	
-			chestgrad = tf.grad(x => chesternet.predict(x).reshape([-1]).gather(idx))
+			chestgrad = tf.grad(x => SYSTEM.chesternet.predict(x).reshape([-1]).gather(idx))
+			
+			const batched = thispred[0].img_input.reshape([1, 1, MODEL_CONFIG.IMAGE_SIZE, MODEL_CONFIG.IMAGE_SIZE])
 			const grad = chestgrad(batched);
 	
 			const layer = grad.mean(0).abs().max(0)
@@ -506,33 +597,29 @@ async function computeGrads_real(thispred, idx){
 	
 		});
 		
-	
 		//////// display grad image
 		canvas = thispred.find(".gradimage")[0]
 		await tf.browser.toPixels(layer,canvas);	
-		canvas.style.width = "100%";
-		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";
-	
-	    
-	
+		
+		await sleep(GUI_WAITTIME)
+		
 	    ctx = canvas.getContext("2d");
 		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
 		makeColor(d.data);
 		makeTransparent(d.data)
 	
 	    thispred[0].grads[idx] = d
-
     }
 
     d = thispred[0].grads[idx]
 
 	ctx = canvas.getContext("2d");
 	ctx.putImageData(d,0,0);
+	thispred.find(".gradimage").show()
 
-	thispred.find(".gradviz .loading")[0].style.display = "none";
-	thispred.find(".gradimagebox")[0].style.display = "block";
-	thispred.find(".gradviz .desc").text("Predictive regions for " + MODEL_CONFIG.LABELS[idx])
+	thispred.find(".viewbox .loading").hide()
+	//thispred.find(".gradimagebox").show()
+	thispred.find(".desc").text("Predictive regions for " + MODEL_CONFIG.LABELS[idx])
 
 }
 
@@ -542,11 +629,14 @@ async function distOverClasses(values){
 	for (let i = 0; i < values.length; i++) {
 
 		if (values[i]<MODEL_CONFIG.OP_POINT[i]){
-			value_normalized = values[i]/(MODEL_CONFIG.OP_POINT[i]*2)
+			value_normalized = values[i]/(MODEL_CONFIG.OP_POINT[i]*2);
 		}else{
-			value_normalized = 1-((1-values[i])/((1-(MODEL_CONFIG.OP_POINT[i]))*2))
+			value_normalized = 1-((1-values[i])/((1-(MODEL_CONFIG.OP_POINT[i]))*2));
+			if (value_normalized>0.6 & MODEL_CONFIG.SCALE_UPPER){
+			value_normalized = Math.min(1, value_normalized*MODEL_CONFIG.SCALE_UPPER);
+			}
 		}
-		console.log(MODEL_CONFIG.LABELS[i] + ",pred:" + values[i] + "," + "OP_POINT:" + MODEL_CONFIG.OP_POINT[i] + "->normalized:" + value_normalized)
+		console.log(MODEL_CONFIG.LABELS[i] + ",pred:" + values[i] + "," + "OP_POINT:" + MODEL_CONFIG.OP_POINT[i] + "->normalized:" + value_normalized);
 
 		topClassesAndProbs.push({
 			className: MODEL_CONFIG.LABELS[i],
@@ -692,10 +782,10 @@ function showProbErrorColor(predictionContainer) {
 			predictionContainer.appendChild(row);
 }
 
-function showProbResults(currentpred) {
+function showProbResults(thispred) {
 
-	classes = currentpred[0].classes
-	predictionContainer = currentpred.find(".predbox")[0]
+	classes = thispred[0].classes
+	predictionContainer = thispred.find(".predbox")[0]
 
 	const probsContainer = document.createElement('div');
 	probsContainer.style.width="100%";
@@ -716,10 +806,11 @@ function showProbResults(currentpred) {
 			classElement.innerText = classes[i].className;
 			if (classes[i].probability > 0.6){
 				classElement.style.fontWeight = "900";
+				classElement.className = 'cell active';
 			}
 			classElement.style.fontSize="small";
 			classElement.style.whiteSpace="nowrap";
-			classElement.style.overflowX="scroll";
+			classElement.style.overflowX="hidden";
 			classElement.style.maxWidth="150px";
 			probsElement.className = 'cell gradient';
 			probsElement.style.borderBottomStyle="solid";
@@ -734,7 +825,7 @@ function showProbResults(currentpred) {
 		}else{
 			explainElement.className = 'explain-btn btn btn-info';
 			explainElement.innerText = "explain";
-			$(explainElement).click(function(){computeGrads(currentpred,i)})	    	
+			$(explainElement).click(function(){computeGrads(thispred,i,explainElement)})	    	
 		}
 		row.appendChild(explainElement);
 
@@ -776,7 +867,7 @@ function showProbResults(currentpred) {
 //			target.className="glyphicon glyphicon-menu-right"
 //			target.style.marginLeft="-7px"; //glyh is 14x14
 //			target.style.position="absolute";
-//			target.style.left=parseInt(currentpred[0].PPV80[i].probability*100) + "%";
+//			target.style.left=parseInt(thispred[0].PPV80[i].probability*100) + "%";
 //			target.style.fontWeight="900";
 //			probsElement.appendChild(target)
 
@@ -785,7 +876,7 @@ function showProbResults(currentpred) {
 //			target.className="glyphicon glyphicon-menu-left"
 //			target.style.marginLeft="-7px"; //glyh is 14x14
 //			target.style.position="absolute";
-//			target.style.left=parseInt(currentpred[0].NPV95[i].probability*100) + "%";
+//			target.style.left=parseInt(thispred[0].NPV95[i].probability*100) + "%";
 //			target.style.fontWeight="900";
 //			probsElement.appendChild(target)
 		}
@@ -892,8 +983,8 @@ async function showResults(imgElement, layers, classes, recScore) {
 	}
 
 	predictionContainer.appendChild(probsContainer);
-	predictionsElement.insertBefore(document.createElement('hr'), predictionsElement.firstChild);
-	predictionsElement.insertBefore(predictionContainer, predictionsElement.firstChild);
+	SYSTEM.predictionsElement.insertBefore(document.createElement('hr'), SYSTEM.predictionsElement.firstChild);
+	SYSTEM.predictionsElement.insertBefore(predictionContainer, SYSTEM.predictionsElement.firstChild);
 
 }
 

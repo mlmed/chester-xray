@@ -1,0 +1,162 @@
+body {
+  padding-top: 70px;
+  min-height:800px;
+}
+
+#chat-link {
+	position: fixed;
+	right: 5px;
+	bottom: 10px;
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	padding: 5px 15px 10px;
+	border-radius: 5px 0 0 5px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+	color: #979faf
+}
+
+.glyphicon-envelope {
+	text-align: center;
+	line-height: 26px;
+	margin-right: 5px;
+	position: relative
+}
+
+
+.prediction {
+    margin-bottom: 20px;
+    padding-left:0px;
+    padding-right:0px;
+    padding-bottom:30px;
+	-webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+	-moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+	box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+}
+
+.prediction .toolbar{
+	font-size: small;
+}
+
+.pred-container {
+    margin-bottom: 20px;
+}
+
+.pred-container > div {
+  display: inline-block;
+  margin-right: 20px;
+  vertical-align: top;
+}
+
+
+.predbox {
+	max-width: 400px;
+}
+
+.row {
+  display: table-row;
+}
+.cell {
+  display: table-cell;
+  padding-right: 20px;
+}
+
+#file-container {
+  margin-bottom: 20px;
+}
+  
+.nopadding {
+   padding: 0 !important;
+   margin: 0 !important;
+}
+
+
+.gradient {
+  background-image:
+	linear-gradient(to right,green,white,#c12e2a)
+}
+
+
+.explain-btn{
+	font-size: xx-small;
+    height: 15pt;
+    margin: auto;
+    padding: 0px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+.topbar {
+	background-color:lightgray;
+	margin-bottom: 10px
+}
+
+.viewbox {
+	position:relative;
+	border-color:black;
+	border-width: 2px; 
+	padding:0px;
+	height:80%;
+    min-height: 400px;
+	
+}
+
+.viewbox .layer {
+	height:100%;
+	position:absolute;
+	top:0px;
+	left:0px;
+	right: 0px;
+	margin:auto;
+	image-rendering:pixelated;
+}
+
+.status{
+	margin-bottom: 10px;
+	left:0px;right:0px;
+	margin-left:auto;margin-right:auto;
+}
+
+/* table */
+
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+.tg .tg-0lax{text-align:left;vertical-align:top}
+
+
+@keyframes blur1 {
+  0% {
+    filter: blur(0.89rem);
+  }
+  50% {
+    filter: blur(0.69rem);
+  }
+  100% {
+    filter: blur(0.89rem);
+  }
+}
+
+@keyframes blur2 {
+  0% {
+    filter: blur(3rem);
+  }
+  50% {
+    filter: blur(0.59rem);
+  }
+  100% {
+    filter: blur(3rem);
+  }
+}
+
+@keyframes blur3 {
+  0% {
+    filter: blur(1.5rem);
+  }
+  50% {
+    filter: blur(1rem);
+  }
+  100% {
+    filter: blur(1.5rem);
+  }
+}

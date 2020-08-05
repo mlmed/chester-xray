@@ -37,69 +37,14 @@
   ga('send', 'pageview');
 </script>
 
-<script src="res/tf-1.3.1.min.js"></script>
+<script src="res/tf-2.0.1.min.js"></script>
 <script src="res/ssim.js"></script>
 <script src="res/js-colormaps.js"></script>
 <script src="res/jquery.sparkline.min.js"></script>
 
 
-	
-
+<link rel='stylesheet' href='style.css' type='text/css' media='all' />
 </head>
-
-
-<style>
-
-body {
-  padding-top: 70px;
-  min-height:800px;
-}
-
-.pred-container {
-    margin-bottom: 20px;
-  }
-
-  .pred-container > div {
-    display: inline-block;
-    margin-right: 20px;
-    vertical-align: top;
-  }
-
-  .row {
-    display: table-row;
-  }
-  .cell {
-    display: table-cell;
-    padding-right: 20px;
-  }
-
-  #file-container {
-    margin-bottom: 20px;
-  }
-  
-.nopadding {
-   padding: 0 !important;
-   margin: 0 !important;
-}
-
-
-.gradient {
-  background-image:
-	linear-gradient(to right,green,white,#c12e2a)
-}
-
-
-.explain-btn{
-	font-size: xx-small;
-    height: 15pt;
-    margin: auto;
-    padding: 0px;
-    padding-left: 5px;
-    padding-right: 5px;
-}
-
-  </style>
-
 
 <script>
 
@@ -183,7 +128,7 @@ function getCookie(cname) {
         </div>
       </div>
     </nav>
-	<div class="container" style="width: 100%">
+	<div class="container" style="width: 100%;min-width: 1024px;">
 
 
 	
@@ -245,104 +190,104 @@ function getCookie(cname) {
 
 <div class="col-sm-12">
 
-			<div class="alert alert-warning" role="alert" style="width: 100%">
-				<center>
-					NOT FOR MEDICAL USE. This is a prototype system for diagnosing
-					chest x-rays using neural networks. All processing is done on your
-					device and images are not sent to the server. If you continue you
-					assume all liability when using the system. A neural network model
-					(~150mb) will be downloaded to your browser.
-					<button id="agree" type="button" class="btn btn-danger">Accept NOT FOR MEDICAL USE</button>
-				</center>
-			</div>
+	<div class="alert alert-warning" role="alert" style="width: 100%">
+		<center>
+			NOT FOR MEDICAL USE. This is a prototype system for diagnosing
+			chest x-rays using neural networks. All processing is done on your
+			device and images are not sent to the server. If you continue you
+			assume all liability when using the system. A neural network model
+			(~150mb) will be downloaded to your browser.
+			<button id="agree" type="button" class="btn btn-danger">Accept NOT FOR MEDICAL USE</button>
+		</center>
+	</div>
 
-			<section>
-				By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
-				New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br>
-				<span id="info" style="color:red"></span>	
+	<div class="col-sm-12">
+	<div style="float:right;">
+		<span style="" >Made by:
+		<a href="https://mlmed.org"><img style="width:200px" src="res/mlmed.png"/></a>
+		and
+		<a href="https://mila.quebec"><img style="width:150px" src="res/mila-medical-logo-new-small.png"/></a>
+		</span>
+	</div>
+				
+	By Joseph Paul Cohen, Paul Bertin, and Vincent Frappier 2019<br>
+	New: Download the offline version <a href="https://github.com/mlmed/dl-web-xray/releases/download/2.0/Chester.app.zip">here</a> for Mac OSX<br>
+	
+	</div>
 
-				<p class="section-head"></p>
-			</section>
-<center><div id="status"></div></center>
-			<section>
-				<div id="file-container" style="display: none">
-					Process an image locally: <input type="file" id="files" name="files[]" multiple> 
-					<a target="_blank" href="examples/">Download example files (opens new window)</a><br>
-					<a href="javascript:downloadCSV();">Download all predictions as CSV</a>
-				</div>
-			</section>
+	<div class="col-sm-12">
+		<div id="file-container" style="display: none">
+			Process an image locally: <input type="file" id="files" name="files[]" multiple> 
+			<a target="_blank" href="examples/">Download example files (opens new window)</a><br>
+			<a href="javascript:downloadCSV();">Download all predictions as CSV</a>
+		</div>
+	</div>
+	
+	<div class="col-sm-12">
+		<span id="info" style="color:red"></span>	
+		<center><div id="status" class="status"></div></center>
+	</div>
+	
 </div>
 
 		
 <div id="predictions">
 
-	<div id="predtemplate" class="prediction" style="width:100%;display:none">
-		<div class="col-xs-12" style="background-color:lightgray;margin-bottom: 10px">
+	<div id="predtemplate" class="prediction col-xs-12" style="display:none">
+		<div class="topbar">
 		<center><span class="imagename">&nbsp;</span></center>
 		</div>
 		<div class="col-xs-12" style="padding:0px;margin-bottom: 10px">
-		<div class="col-xs-4 ">
-			<center style="">Input Image</center></div>
-<!-- 		<div class="col-xs-4 ">
-			<center style="">Out Of Distribution error
-			<br><span style="font-size: x-small">Heatmap where the image varies from the training data.</span>
-			</center></div> -->
-		<div class="col-xs-4 ">
-			<center style="">Predictive image regions
-			<br><span style="font-size: x-small">Heatmap of image regions which influence the prediction.</span>
-			</center></div>
-		<div class="col-xs-4 ">
-			<center style=""><b>Disease Predictions</b>
-			<br><span style="font-size: x-small">Risk of a disease.</span>
+		<div class="col-xs-8">
+<!-- 			<center style=""><b>Image</b> -->
+<center>
+  <div class="toolbar btn-group">
+      <button class="btn btn-default btn-invert-colors" data-original-title="Invert colors">
+		<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-circle-half" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  <path fill-rule="evenodd" d="M8 15V1a7 7 0 1 1 0 14zm0 1A8 8 0 1 1 8 0a8 8 0 0 1 0 16z"/>
+		</svg> Invert colors
+	  </button>
+      <button class="btn btn-default btn-raw-gradients" data-original-title="raw gradients">
+      	<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-cpu" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  <path fill-rule="evenodd" d="M5 0a.5.5 0 0 1 .5.5V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2h1V.5a.5.5 0 0 1 1 0V2A2.5 2.5 0 0 1 14 4.5h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14v1h1.5a.5.5 0 0 1 0 1H14a2.5 2.5 0 0 1-2.5 2.5v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14h-1v1.5a.5.5 0 0 1-1 0V14A2.5 2.5 0 0 1 2 11.5H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2v-1H.5a.5.5 0 0 1 0-1H2A2.5 2.5 0 0 1 4.5 2V.5A.5.5 0 0 1 5 0zm-.5 3A1.5 1.5 0 0 0 3 4.5v7A1.5 1.5 0 0 0 4.5 13h7a1.5 1.5 0 0 0 1.5-1.5v-7A1.5 1.5 0 0 0 11.5 3h-7zM5 6.5A1.5 1.5 0 0 1 6.5 5h3A1.5 1.5 0 0 1 11 6.5v3A1.5 1.5 0 0 1 9.5 11h-3A1.5 1.5 0 0 1 5 9.5v-3zM6.5 6a.5.5 0 0 0-.5.5v3a.5.5 0 0 0 .5.5h3a.5.5 0 0 0 .5-.5v-3a.5.5 0 0 0-.5-.5h-3z"/>
+		</svg> Raw Gradients
+	  </button>
+      <button class="btn btn-default btn-reset-layers" data-original-title="reset layers">
+      	<svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-layers" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+		  <path fill-rule="evenodd" d="M3.188 8L.264 9.559a.5.5 0 0 0 0 .882l7.5 4a.5.5 0 0 0 .47 0l7.5-4a.5.5 0 0 0 0-.882L12.813 8l-1.063.567L14.438 10 8 13.433 1.562 10 4.25 8.567 3.187 8z"/>
+		  <path fill-rule="evenodd" d="M7.765 1.559a.5.5 0 0 1 .47 0l7.5 4a.5.5 0 0 1 0 .882l-7.5 4a.5.5 0 0 1-.47 0l-7.5-4a.5.5 0 0 1 0-.882l7.5-4zM1.563 6L8 9.433 14.438 6 8 2.567 1.562 6z"/>
+		</svg> Reset layers
+	  </button>
+  </div>
+</center>
+		</div>
+		<div class="col-xs-4">
+			<center style=""><b>Pathology Risk</b>
+			<br><span style="font-size: x-small">The white center region indicates that the model is not sure.</span>
 			</center>
 		</div>
 		</div>
 		
-		<div class="col-xs-12"  style="padding:0px;">
-		<div class="col-xs-4 imgviz-no" style="display:none">
-				<canvas class="inputimage"
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			<br>
-		</div>
-		<div class="col-xs-4 imgviz oodviz" >
-			<center class="loading"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
-			
-			<span style="position:relative;display:none">
-				<canvas class="recimage" 
-				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
-				<canvas class="inputimage_rec" 
-				style="width:50%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated;"></canvas>
-			</span>
-			
-			<div class="oodimagebox" style="position:relative;display:none">
-				
-				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			
-				<canvas class="oodimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated;display:none"></canvas>
-			</div>
-			<center><button style="display:none" type="button" class="oodtoggle btn btn-danger btn-xs">
-			Show OOD heatmap
-			</button></center>
-			<br>
-			
-		</div>
-		<div class="col-xs-4 gradviz">
-			<center><div style="margin-top:40%;display:none" class="computegrads">
-			
-			</div></center>
-			<center class="loading" style="display:none;"><img style="margin-top:40%;" alt="Loading..." src="https://i.imgur.com/yoS0cXm.gif"/></center>
-			
-			<div class="gradimagebox" style="position:relative;display:none">
-				<canvas class="inputimage" 
-				style="width:100%;height:auto;position:relative;top:0px;left:0px;image-rendering:pixelated"></canvas>
-			
-				<canvas class="gradimage" 
-				style="width:100%;height:auto;position:absolute;top:0px;left:0px;opacity: 0.5;image-rendering:pixelated"></canvas>
+		<div class="col-xs-8" style="">
+			<div class="viewbox">
+				<canvas class="layer inputimage_highres baselayer"></canvas>
+				<canvas class="layer inputimage" style="display:none;"></canvas>
+				<canvas class="layer inputimage_rec" style="display:none;"></canvas>
+				<canvas class="layer recimage" style="display:none;"></canvas>
+				<canvas class="layer oodimage" style="opacity: 0.5;display:none;"></canvas>
+				<canvas class="layer gradimage" style="filter:blur(0.89rem)"></canvas>
+				<center class="layer loading" style="display:none;margin-top:5%;width:100%;"><img style="width:400px;" alt="Loading..." src="res/loading1.gif"/></center>
 			</div>
 			<center><span class="desc"></span></center>
-			<br>
+			</span>
+			
+			<center>
+				<button style="display:none" type="button" class="oodtoggle btn btn-danger btn-xs">
+				Show OOD heatmap
+				</button>
+			</center>
+				
+<!-- 			<center><div style="margin-top:40%;display:none" class="computegrads"></div></center> -->
 			
 		</div>
 		<div class="col-xs-4 predviz">
@@ -360,9 +305,9 @@ function getCookie(cname) {
 
 
 </div>	
-<img id="cat" src="examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg" style="display:none">
+<img id="defaultImage" src="examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg" style="display:none" />
 		
-	</div>
+</div>
 </body>
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
@@ -404,63 +349,29 @@ function testBrowser(){
 
 </script>
 
-<style>
-#chat-link {
-	position: fixed;
-	right: 5px;
-	bottom: 10px;
-	background: #fff;
-	border: 1px solid #e0e0e0;
-	padding: 5px 15px 10px;
-	border-radius: 5px 0 0 5px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-	color: #979faf
-}
 
-.glyphicon-envelope {
-	text-align: center;
-	line-height: 26px;
-	margin-right: 5px;
-	position: relative
-}
-</style>
+<br>
 
 <center>
-
-<span style="" >Made by <br>
-<a href="https://mlmed.org"/><img style="width:200px" src="res/mlmed.png"/></a>
-and
-<a href="https://mila.quebec"/><img style="width:150px" src="res/mila-medical-logo-new-small.png"/></a>
-</span>
-<br>
-<br>
-
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;border-color:black;}
-.tg .tg-baqh{text-align:center;vertical-align:top}
-.tg .tg-0lax{text-align:left;vertical-align:top}
-</style>
 <table class="tg">
   <tr>
     <th class="tg-baqh" colspan="2">System Information</th>
   </tr>
   <tr>
     <td class="tg-0lax">Version</td>
-    <td class="tg-0lax">2.0 (Old versions: <a href="/tools/xray-v1">v1</a>)</td>
+    <td class="tg-0lax">3.0 (Old versions: <a href="/tools/xray-v2">v2</a>, <a href="/tools/xray-v1">v1</a>)</td>
   </tr>
   <tr>
     <td class="tg-0lax">Prediction Model</td>
-    <td class="tg-0lax">DenseNet-121 (Input 224x224) chestxnet-45rot15trans15scale4byte</td>
+    <td class="tg-0lax">DenseNet-121 (Input 224x224) xrv-all-45rot15trans15scale (TorchXRayVision) (Paper <a href="https://arxiv.org/abs/2002.02497">https://arxiv.org/abs/2002.02497</a>)</td>
   </tr>
   <tr>
     <td class="tg-0lax">Out of Distribtion Model</td>
-    <td class="tg-0lax">Autoencoder (Input 64x64) ae-chest-savedmodel-64-512</td>
+    <td class="tg-0lax">Autoencoder (Input 64x64) ae-chest-savedmodel-64-512 (Paper: <a href="https://arxiv.org/abs/1901.11210">https://arxiv.org/abs/1901.11210</a>)</td>
   </tr>
   <tr>
     <td class="tg-0lax">Training data</td>
-    <td class="tg-0lax">NIH Chest-xray14 - Clinical Center, Bethesda, Maryland, USA</td>
+    <td class="tg-0lax">7 datasets</td>
   </tr>
   <tr>
     <td class="tg-0lax">Samples</td>
