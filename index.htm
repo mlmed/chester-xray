@@ -22,24 +22,13 @@
 	
 	<meta name="title" content="Chester the AI Radiology Assistant">
 	<meta name="description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. ">
-	
+
 	<script async src="res/js/bootstrap-3.3.7.min.js"></script>
 	<script async src="res/js/magnify.js"></script>
 	<script async src="res/js/js-colormaps.js"></script>
 	<script async src="res/js/ssim.js"></script>
 	<script src="res/js/jquery-3.5.1.min.js"></script>
 	<script src="res/js/tf-2.0.1.min.js"></script>
-	<script src="res/js/system.js?v=1.195"></script>
-	
-	<script>
-	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-	
-	  ga('create', 'UA-131584004-1', 'mlmed.org');
-	  ga('send', 'pageview');
-	</script>
 	
 	<script>
 	
@@ -95,6 +84,19 @@
 	    }
 	    return "";
 	}
+	</script>
+	
+	
+	<script src="res/js/system.js?v=1.195"></script>
+	
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+	
+	  ga('create', 'UA-131584004-1', 'mlmed.org');
+	  ga('send', 'pageview');
 	</script>
 	
 </head>
