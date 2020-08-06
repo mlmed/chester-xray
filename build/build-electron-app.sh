@@ -37,7 +37,7 @@ cp app.js ./tmp/mac/Chester.app/Contents/Resources/app/
 cp package.json ./tmp/mac/Chester.app/Contents/Resources/app/
 
 #echo "Compressing of OSX"
-#zip -q -r ./tmp/mac/Chester.app.zip ./tmp/mac/Chester.app
+#zip -q -r ./tmp/Chester.app.zip ./tmp/mac/Chester.app
 
 # windows app
 mkdir -p ./tmp/win/
