@@ -36,9 +36,6 @@ cp -r ./tmp/app/ ./tmp/mac/Chester.app/Contents/Resources/app/
 cp app.js ./tmp/mac/Chester.app/Contents/Resources/app/
 cp package.json ./tmp/mac/Chester.app/Contents/Resources/app/
 
-#echo "Compressing of OSX"
-#zip -q -r ./tmp/Chester.app.zip ./tmp/mac/Chester.app
-
 # windows app
 mkdir -p ./tmp/win/
 unzip -o -q ./cache/$(basename $ELECTRON_WIN64_URL) -d ./tmp/win/
@@ -49,9 +46,6 @@ rm ./tmp/win/resources/default_app.asar
 cp -r ./tmp/app/ ./tmp/win/resources/app/
 cp app.js ./tmp/win/resources/app/
 cp package.json ./tmp/win/resources/app/
-
-#echo "Compressing for Windows"
-#zip -q -r ./tmp/Chester-Win64.zip ./tmp/win
 
 
 
