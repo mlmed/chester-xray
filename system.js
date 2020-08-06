@@ -384,7 +384,6 @@ async function predict_real(imgElement, isInitialRun, name) {
 		}
 	})
 
-	//thispred.find(".inputimage").attr("src", imgElement.src)
 	thispred.show();
 
 	thispred.find(".imagename").text(name)
@@ -466,9 +465,6 @@ async function predict_real(imgElement, isInitialRun, name) {
 		canvas = thispred.find(".oodimage")[0]
 		layer = recErr.reshape([64,64])
 		await tf.browser.toPixels(layer.clipByValue(0, 1),canvas);
-/*		canvas.style.width = "100%";
-		canvas.style.height = "";
-		canvas.style.imageRendering = "pixelated";*/
 	
 		ctx = canvas.getContext("2d");
 		d = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -479,14 +475,6 @@ async function predict_real(imgElement, isInitialRun, name) {
 		/*scoreBox = document.createElement("center")*/
 		score = "recScore:" + parseFloat(recScore).toFixed(2)  + ", ssim:" + ssim.ssim.toFixed(2) 
 		thispred.find(".desc").text(score);
-/*		scoreBox.innerText = score
-		thispred.find(".oodimagebox")[0].append(scoreBox)*/
-	
-		//thispred.find(".oodviz .loading")[0].style.display = "none";
-		//thispred.find(".oodimagebox")[0].style.display = "block";
-		//thispred.find(".oodtoggle")[0].style.display = "block";
-	
-		//thispred.find(".oodtoggle").click(function(){$(this).closest(".prediction").find(".oodimage").toggle()});
 	
 	
 		can_predict = ssim.ssim > 0.60
@@ -865,8 +853,10 @@ function showProbResults(thispred) {
 		}else{
 			target = document.createElement('span');
 			//target.innerText = "|";
-			target.className="glyphicon glyphicon-asterisk"
-				target.style.marginLeft="-7px"; //glyh is 14x14
+			target.className="marker"
+			target.innerHTML = "*";
+			target.style.fontSize="large"
+			target.style.marginLeft="-3px"; //glyh is 14x14
 			target.style.position="absolute";
 			target.style.left=parseInt(classes[i].probability*100) + "%";
 			target.style.fontWeight="900";
@@ -905,13 +895,15 @@ function showProbResults(thispred) {
 			function(e){
 				a=$(this).find("span")[0];
 				a.innerHTML=a.style.left
+				a.style.fontSize=""
 //				if (parseInt(a.style.left)>60){
 //				a.style.marginLeft="-30px";
 //				}
 			},
 			function(e){
 				a=$(this).find("span")[0];
-				a.innerHTML="";
+				a.innerHTML="*";
+				a.style.fontSize="large"
 			},
 	);
 }
