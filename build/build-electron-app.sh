@@ -7,7 +7,7 @@ mkdir -p ./cache
 
 
 rm -rf ./tmp
-
+rm -rf ./tmp
 
 mkdir -p ./tmp
 mkdir -p ./tmp/app
@@ -16,8 +16,6 @@ mkdir -p ./tmp/app/models
 mkdir -p ./tmp/app/examples
 
 cp ../index.htm ./tmp/app/
-cp ../system.js ./tmp/app/
-cp ../style.css ./tmp/app/
 cp -r ../res/ ./tmp/app/res/
 cp -r ../examples/ ./tmp/app/examples/
 
@@ -26,23 +24,33 @@ cp -r ../models/ae-chest-savedmodel-64-512 ./tmp/app/models/
 
 
 #mac app
-unzip -q ./cache/$(basename $ELECTRON_OSX_URL) -d ./tmp/
+mkdir -p ./tmp/mac/
+unzip -o -q ./cache/$(basename $ELECTRON_OSX_URL) -d ./tmp/mac/
 
-mv ./tmp/Electron.app ./tmp/Chester.app
-rm ./tmp/Chester.app/Contents/Resources/electron.icns
-cp Chester.icns ./tmp/Chester.app/Contents/Resources/
-cp Info.plist ./tmp/Chester.app/Contents/
-mkdir -p ./tmp/Chester.app/Contents/Resources/app/
-cp -r ./tmp/app/ ./tmp/Chester.app/Contents/Resources/app/
-cp app.js ./tmp/Chester.app/Contents/Resources/app/
-cp package.json ./tmp/Chester.app/Contents/Resources/app/
+mv ./tmp/mac/Electron.app ./tmp/mac/Chester.app
+rm ./tmp/mac/Chester.app/Contents/Resources/electron.icns
+cp Chester.icns ./tmp/mac/Chester.app/Contents/Resources/
+cp Info.plist ./tmp/mac/Chester.app/Contents/
+mkdir -p ./tmp/mac/Chester.app/Contents/Resources/app/
+cp -r ./tmp/app/ ./tmp/mac/Chester.app/Contents/Resources/app/
+cp app.js ./tmp/mac/Chester.app/Contents/Resources/app/
+cp package.json ./tmp/mac/Chester.app/Contents/Resources/app/
 
-#echo Compressing .app
-#zip -q -r ./tmp/Chester.app.zip ./tmp/Chester.app
+#echo "Compressing of OSX"
+#zip -q -r ./tmp/mac/Chester.app.zip ./tmp/mac/Chester.app
 
 # windows app
+mkdir -p ./tmp/win/
+unzip -o -q ./cache/$(basename $ELECTRON_WIN64_URL) -d ./tmp/win/
 
+mkdir -p ./tmp/win/resources/app/
+mv ./tmp/win/electron.exe ./tmp/win/chester.exe
+cp -r ./tmp/app/ ./tmp/win/resources/app/
+cp app.js ./tmp/win/resources/app/
+cp package.json ./tmp/win/resources/app/
 
+#echo "Compressing for Windows"
+#zip -q -r ./tmp/Chester-Win64.zip ./tmp/win
 
 
 
