@@ -45,6 +45,7 @@ unzip -o -q ./cache/$(basename $ELECTRON_WIN64_URL) -d ./tmp/win/
 
 mkdir -p ./tmp/win/resources/app/
 mv ./tmp/win/electron.exe ./tmp/win/chester.exe
+rm ./tmp/win/resources/default_app.asar
 cp -r ./tmp/app/ ./tmp/win/resources/app/
 cp app.js ./tmp/win/resources/app/
 cp package.json ./tmp/win/resources/app/
