@@ -853,11 +853,8 @@ function showProbResults(thispred) {
 		}else{
 			target = document.createElement('span');
 			//target.innerText = "|";
-			target.className="marker"
-			target.innerHTML = "*";
-			target.style.fontSize="35px"
-			target.style.marginTop="-10px"
-			target.style.marginLeft="-3px"; //glyh is 14x14
+			target.className="marker glyphicon glyphicon-asterisk"
+			target.style.marginLeft="-7px"; //glyh is 14x14
 			target.style.position="absolute";
 			target.style.left=parseInt(classes[i].probability*100) + "%";
 			target.style.fontWeight="900";
@@ -896,17 +893,13 @@ function showProbResults(thispred) {
 			function(e){
 				a=$(this).find("span")[0];
 				a.innerHTML=a.style.left
-				a.style.fontSize=""
-				a.style.marginTop=""
 //				if (parseInt(a.style.left)>60){
 //				a.style.marginLeft="-30px";
 //				}
 			},
 			function(e){
 				a=$(this).find("span")[0];
-				a.innerHTML="*";
-				a.style.fontSize="35px"
-				a.style.marginTop="-10px"
+				a.innerHTML="";
 			},
 	);
 }

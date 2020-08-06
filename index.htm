@@ -1,111 +1,103 @@
 <html>
 <head>
-
-	<script src="res/jquery-3.5.1.min.js"></script>
-	<link rel="stylesheet" href="res/bootstrap-3.3.7.min.css">
-	<link rel="stylesheet" href="res/bootstrap-theme-3.3.7.min.css">
-	<script async src="res/bootstrap-3.3.7.min.js"></script>
+	<link rel="stylesheet" href="res/css/bootstrap-3.3.7.min.css">
+	<link rel="stylesheet" href="res/css/bootstrap-theme-3.3.7.min.css">
+	<link rel='stylesheet' href='res/css/style.css' type='text/css' media='all' />
+	<link rel="stylesheet" href="res/css/magnify.css">
 	
-	<link rel="stylesheet" href="res/magnify.css">
-	<script async src="res/magnify.js"></script>
-
-<title>Chester the AI Radiology Assistant</title>
-
-<meta name="viewport" content="width=1100, initial-scale=1.0">
-<meta property="og:site_name" content="Chester the AI Radiology Assistant" />
-<meta property="og:locale" content="en_US" />  
-<meta property="og:type" content="article" />
-<meta property="og:image" content="https://mlmed.org/tools/xray/res/share.png" />
-<meta property="og:title" content="Chester the AI Radiology Assistant" />
-
-<meta name="twitter:card" content="summary"/>
-<meta property="og:url" content="https://mlmed.org/tools/xray/" />
-<meta property="og:title" content="Chester the AI Radiology Assistant" />
-<meta property="og:description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation." />
-<meta property="og:image" content="https://mlmed.org/tools/xray/res/share.png" />
-
-
-<meta name="title" content="Chester the AI Radiology Assistant">
-<meta name="description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. ">
-
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-131584004-1', 'mlmed.org');
-  ga('send', 'pageview');
-</script>
-
-<script src="res/tf-2.0.1.min.js"></script>
-<script src="res/ssim.js"></script>
-<script src="res/js-colormaps.js"></script>
-
-
-<link rel='stylesheet' href='style.css' type='text/css' media='all' />
-</head>
-
-<script>
-
-function showAbout(){
-	$("#aboutbtn").addClass("active");
-	$(".about").show();
+	<title>Chester the AI Radiology Assistant</title>
 	
-}
-
-function hideAbout(){
-	$("#aboutbtn").removeClass("active");
-	$(".about").hide();
-	setCookie('about','about',9999);
-}
-
-
-$(function(){
+	<meta name="viewport" content="width=1100, initial-scale=1.0">
+	<meta property="og:site_name" content="Chester the AI Radiology Assistant" />
+	<meta property="og:locale" content="en_US" />  
+	<meta property="og:type" content="article" />
+	<meta property="og:image" content="https://mlmed.org/tools/xray/res/share.png" />
+	<meta property="og:title" content="Chester the AI Radiology Assistant" />
 	
-	if (findGetParameter("local") != "true" && getCookie("about") != "about"){
-		showAbout();
+	<meta name="twitter:card" content="summary"/>
+	<meta property="og:url" content="https://mlmed.org/tools/xray/" />
+	<meta property="og:title" content="Chester the AI Radiology Assistant" />
+	<meta property="og:description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation." />
+	<meta property="og:image" content="https://mlmed.org/tools/xray/res/share.png" />
+	
+	<meta name="title" content="Chester the AI Radiology Assistant">
+	<meta name="description" content="This is a web based (but locally run) system for diagnosing chest X-Rays. Code is delivered via a URL but the patient data remains on the users machine and all processing occurs locally. The system is designed to be used as a reference where a user can process an image to confirm or aid in their diagnosis. The system contains three main components: out-of-distribution detection, disease prediction, and prediction explanation. ">
+	
+	<script async src="res/js/bootstrap-3.3.7.min.js"></script>
+	<script async src="res/js/magnify.js"></script>
+	<script async src="res/js/js-colormaps.js"></script>
+	<script async src="res/js/ssim.js"></script>
+	<script src="res/js/jquery-3.5.1.min.js"></script>
+	<script src="res/js/tf-2.0.1.min.js"></script>
+	<script src="res/js/system.js?v=1.195"></script>
+	
+	<script>
+	  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+	  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+	  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+	  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+	
+	  ga('create', 'UA-131584004-1', 'mlmed.org');
+	  ga('send', 'pageview');
+	</script>
+	
+	<script>
+	
+	function showAbout(){
+		$("#aboutbtn").addClass("active");
+		$(".about").show();
+		
 	}
 	
-	$("#aboutbtn").click(function(){
+	function hideAbout(){
+		$("#aboutbtn").removeClass("active");
+		$(".about").hide();
+		setCookie('about','about',9999);
+	}
+	
+	
+	$(function(){
 		
-		if (!$(".about").is(":visible")){
+		if (findGetParameter("local") != "true" && getCookie("about") != "about"){
 			showAbout();
-		}else{
-			hideAbout();
 		}
+		
+		$("#aboutbtn").click(function(){
+			
+			if (!$(".about").is(":visible")){
+				showAbout();
+			}else{
+				hideAbout();
+			}
+		});
+		
 	});
 	
-});
-
-function setCookie(cname, cvalue, exdays) {
-    var d = new Date();
-    d.setTime(d.getTime() + (exdays*24*60*60*1000));
-    var expires = "expires="+ d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
-}
-
-function getCookie(cname) {
-    var name = cname + "=";
-    var decodedCookie = decodeURIComponent(document.cookie);
-    var ca = decodedCookie.split(';');
-    for(var i = 0; i <ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}
-
-
-
-
-</script>
-
+	function setCookie(cname, cvalue, exdays) {
+	    var d = new Date();
+	    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+	    var expires = "expires="+ d.toUTCString();
+	    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+	}
+	
+	function getCookie(cname) {
+	    var name = cname + "=";
+	    var decodedCookie = decodeURIComponent(document.cookie);
+	    var ca = decodedCookie.split(';');
+	    for(var i = 0; i <ca.length; i++) {
+	        var c = ca[i];
+	        while (c.charAt(0) == ' ') {
+	            c = c.substring(1);
+	        }
+	        if (c.indexOf(name) == 0) {
+	            return c.substring(name.length, c.length);
+	        }
+	    }
+	    return "";
+	}
+	</script>
+	
+</head>
 <body>
     <nav class="navbar navbar-default navbar-fixed-top">
       <div class="container">
@@ -299,7 +291,6 @@ function getCookie(cname) {
 
 <canvas id="zoom" width="100" height="50" style="width:400px; height:200px;position:absolute; top:0; left:0; display:none;image-rendering:pixelated"></canvas>
 
-<script src="system.js?v=1.194"></script>
 <script>
 let statusElement;
 let status;
