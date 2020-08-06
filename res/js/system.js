@@ -354,13 +354,13 @@ async function predict_real(imgElement, isInitialRun, name) {
 	thispred[0].grads = []; // to cache grads
 	SYSTEM.predictionsElement.insertBefore(thispred[0], SYSTEM.predictionsElement.firstChild);
 	
-	$(".btn-reset-layers").click(function(){
+	thispred.find(".btn-reset-layers").click(function(){
 		
 		thispred.find(".gradimage").hide();
 		reset_grad_btns(thispred);
 	})
 	
-	$(".btn-invert-colors").click(function(){
+	thispred.find(".btn-invert-colors").click(function(){
 		
 		if ($(this).hasClass("active")){
 			thispred.find(".inputimage_highres").css("filter", "invert(0)");
@@ -371,7 +371,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 		}
 	})
 	
-	$(".btn-raw-gradients").click(function(){
+	thispred.find(".btn-raw-gradients").click(function(){
 		
 		if ($(this).hasClass("active")){
 			thispred.find(".gradimage").css("filter", "blur(0.89rem)");
