@@ -325,10 +325,9 @@ function prepare_image_resize_crop(imgElement, size){
 	
 	img_cropped = img.slice([wOffset,hOffset],[size,size])
 	
-	img_normalized = img_cropped.div(tf.scalar(255)).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
-	meanImg = img_normalized.mean(2);
+	img_cropped = img_cropped.mean(2).div(255)
 	
-	return meanImg
+	return img_cropped
 }
 
 function prepare_image(thispred, imgElement){
@@ -337,7 +336,13 @@ function prepare_image(thispred, imgElement){
 
 	thispred[0].img_highres = prepare_image_resize_crop(imgElement, Math.max(imgElement.width, imgElement.height));
 	
-	thispred[0].img_input = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
+	thispred[0].img_resized = prepare_image_resize_crop(imgElement, MODEL_CONFIG.IMAGE_SIZE);
+	
+	thispred[0].img_input = thispred[0].img_resized.mul(2).sub(1).mul(tf.scalar(MODEL_CONFIG.IMAGE_SCALE));
+/*	
+		img_normalized = 
+		meanImg = img_normalized.mean(2);*/
+	
 	
 }
 
@@ -392,7 +397,7 @@ async function predict_real(imgElement, isInitialRun, name) {
 
 	//////// display input image
 	img = thispred.find(".inputimage_highres")
-	await tf.browser.toPixels(thispred[0].img_highres.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
+	await tf.browser.toPixels(thispred[0].img_highres,img[0]);	
 	thispred.find(".inputimage_highres").show()
 /*	img = thispred.find(".inputimage")
 	await tf.browser.toPixels(thispred[0].img_input.div(tf.scalar(MODEL_CONFIG.IMAGE_SCALE)),img[0]);	
