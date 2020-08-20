@@ -271,7 +271,7 @@ async function run_demo(){
 	imgElement.onload = () => {
 		predict(imgElement, true, "Example Image (" + imgElement.src.substring(imgElement.src.lastIndexOf('/')+1)+ ")");
 		};
-	imgElement.src = "examples/auntminnie-d-2020_01_28_23_51_6665_2020_01_28_Vietnam_coronavirus.jpeg";	
+	imgElement.src = "examples/f410057190635755d60158d1595d67_jumbo-1.jpeg";	
 	
 }
 
