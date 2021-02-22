@@ -75,8 +75,8 @@ if (findGetParameter("local") == "true"){
     SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
     SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 }else{
-    SYSTEM.MODEL_PATH = 'https://mlmed.github.io/tools/xray/models/xrv-all-45rot15trans15scale';
-    SYSTEM.AEMODEL_PATH = 'https://mlmed.github.io/tools/xray/models/ae-chest-savedmodel-64-512';
+    SYSTEM.MODEL_PATH = './models/xrv-all-45rot15trans15scale';
+    SYSTEM.AEMODEL_PATH = './models/ae-chest-savedmodel-64-512';
 }
 
 /*let chesternet;
