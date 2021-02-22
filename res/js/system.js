@@ -795,6 +795,10 @@ function showProbResults(thispred) {
 	probsContainer.style.minWidth="220px";
 
 	for (let i = -1; i < classes.length; i++) {
+
+		if ((i >= 0) && (classes[i].className == "")){
+			continue;
+		}
 		const row = document.createElement('div');
 		row.className = 'row';
 		const classElement = document.createElement('div');
