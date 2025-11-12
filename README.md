@@ -20,3 +20,6 @@ Publications:
 A screenshot:
 
 ![](res/share.jpg)
+
+
+Note! Only support png and jpg files.
